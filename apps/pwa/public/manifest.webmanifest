@@ -1,0 +1,10 @@
+{
+  "name": "Obsidian Vault",
+  "short_name": "Vault",
+  "description": "Zero-knowledge encrypted password, PIN, and recovery vault",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09090B",
+  "theme_color": "#8B5CF6",
+  "orientation": "portrait-primary"
+}

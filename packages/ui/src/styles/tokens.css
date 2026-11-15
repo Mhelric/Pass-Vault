@@ -1,0 +1,64 @@
+:root {
+  color-scheme: dark;
+
+  /* Surfaces (Deep Obsidian) */
+  --bg-primary: #09090b;
+  --bg-elevated: #121217;
+  --bg-surface: #1a1a24;
+  --border-subtle: #27273a;
+
+  /* Brand Accents (Electric Purple) */
+  --accent-primary: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --accent-glow: #a855f7;
+  --accent-soft: #c084fc;
+  --accent-tint: rgba(139, 92, 246, 0.14);
+
+  /* Typography */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  /* Semantic Status */
+  --status-success: #10b981;
+  --status-warning: #f59e0b;
+  --status-danger: #ef4444;
+
+  /* Secret Syntax Highlighting (Monospace) */
+  --secret-letter: #f8fafc;
+  --secret-digit: #c084fc;
+  --secret-symbol: #34d399;
+
+  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+}
+
+html,
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.font-mono-secret {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+}
+
+/* Subtle custom dark scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #27273a;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3f3f5c;
+}
