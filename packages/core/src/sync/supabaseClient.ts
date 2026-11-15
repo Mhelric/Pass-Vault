@@ -27,18 +27,27 @@ export function createVaultSupabaseClient(config: SupabaseConfig): SupabaseClien
 export async function authenticateSupabaseVaultUser(
   client: SupabaseClient,
   email: string,
-  masterPassword: string
+  masterPassword: string,
+  mode: 'signin' | 'signup' | 'auto' = 'auto'
 ): Promise<{ userId: string; email: string }> {
   const cleanEmail = email.trim().toLowerCase();
   const authPassword = await deriveAuthPassword(masterPassword, cleanEmail);
 
-  const signInRes = await client.auth.signInWithPassword({
-    email: cleanEmail,
-    password: authPassword,
-  });
+  if (mode === 'signin' || mode === 'auto') {
+    const signInRes = await client.auth.signInWithPassword({
+      email: cleanEmail,
+      password: authPassword,
+    });
 
-  if (!signInRes.error && signInRes.data.user) {
-    return { userId: signInRes.data.user.id, email: cleanEmail };
+    if (!signInRes.error && signInRes.data.user) {
+      return { userId: signInRes.data.user.id, email: cleanEmail };
+    }
+
+    if (mode === 'signin') {
+      throw new Error(
+        'Invalid email or Master Password. If you are new, click "Create Encrypted Vault" below.'
+      );
+    }
   }
 
   const signUpRes = await client.auth.signUp({
@@ -48,9 +57,17 @@ export async function authenticateSupabaseVaultUser(
 
   if (signUpRes.error) {
     if (signUpRes.error.message.toLowerCase().includes('already registered')) {
-      throw new Error('Incorrect Master Password for this vault email.');
+      throw new Error(
+        mode === 'signup'
+          ? 'An encrypted vault with this email already exists. Please Sign In instead.'
+          : 'Incorrect Master Password for this vault email.'
+      );
     }
-    throw new Error(`Cloud auth failed: ${signUpRes.error.message}`);
+    throw new Error(
+      mode === 'signup'
+        ? `Cloud registration failed: ${signUpRes.error.message}`
+        : `Cloud auth failed: ${signUpRes.error.message}`
+    );
   }
 
   if (signUpRes.data.session && signUpRes.data.user) {

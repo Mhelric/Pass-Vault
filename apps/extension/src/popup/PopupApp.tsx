@@ -13,6 +13,8 @@ import { generatePassword, generatePin } from '@vault/crypto';
 import { CategoryBadge, CopyButton, PinKeypad } from '@vault/ui';
 import {
   ArrowDownToLine,
+  Eye,
+  EyeOff,
   Globe,
   Lock,
   RefreshCw,
@@ -59,6 +61,8 @@ export function PopupApp() {
   const [cloudEmail, setCloudEmail] = useState('');
   const [cloudMaster, setCloudMaster] = useState('');
   const [cloudPin, setCloudPin] = useState('');
+  const [showCloudMaster, setShowCloudMaster] = useState(false);
+  const [showCloudPin, setShowCloudPin] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   // Quick generator state
@@ -196,23 +200,45 @@ export function PopupApp() {
               placeholder="Vault Email (e.g. you+vault@gmail.com)"
               className="w-full rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
             />
-            <input
-              type="password"
-              required
-              value={cloudMaster}
-              onChange={(e) => setCloudMaster(e.target.value)}
-              placeholder="Master Password"
-              className="w-full font-mono-secret rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-            />
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength={6}
-              value={cloudPin}
-              onChange={(e) => setCloudPin(e.target.value.replace(/\D/g, ''))}
-              placeholder="6-digit Quick PIN (optional)"
-              className="w-full font-mono-secret rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-            />
+            <div className="relative">
+              <input
+                type={showCloudMaster ? 'text' : 'password'}
+                required
+                value={cloudMaster}
+                onChange={(e) => setCloudMaster(e.target.value)}
+                placeholder="Master Password"
+                className="w-full font-mono-secret rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-2.5 pr-8 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCloudMaster((prev) => !prev)}
+                aria-label={showCloudMaster ? 'Hide master password' : 'Show master password'}
+                title={showCloudMaster ? 'Hide master password' : 'Show master password'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                {showCloudMaster ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                type={showCloudPin ? 'text' : 'password'}
+                inputMode="numeric"
+                maxLength={6}
+                value={cloudPin}
+                onChange={(e) => setCloudPin(e.target.value.replace(/\D/g, ''))}
+                placeholder="6-digit Quick PIN (optional)"
+                className="w-full font-mono-secret rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-2.5 pr-8 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCloudPin((prev) => !prev)}
+                aria-label={showCloudPin ? 'Hide Quick PIN' : 'Show Quick PIN'}
+                title={showCloudPin ? 'Hide Quick PIN' : 'Show Quick PIN'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                {showCloudPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
             <button
               type="submit"
               disabled={busy}

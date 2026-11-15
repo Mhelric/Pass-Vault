@@ -7,6 +7,8 @@ import { CategoryBadge, CopyButton } from '@vault/ui';
 import {
   Command,
   CreditCard,
+  Eye,
+  EyeOff,
   FileText,
   FileUp,
   Hash,
@@ -75,9 +77,14 @@ export function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   // Onboarding state
+  const [authMode, setAuthMode] = useState<'signin' | 'create'>('signin');
   const [aliasInput, setAliasInput] = useState('');
   const [masterInput, setMasterInput] = useState('');
+  const [confirmMasterInput, setConfirmMasterInput] = useState('');
   const [pinInput, setPinInput] = useState('');
+  const [showMaster, setShowMaster] = useState(false);
+  const [showConfirmMaster, setShowConfirmMaster] = useState(false);
+  const [showPin, setShowPin] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
@@ -199,15 +206,22 @@ export function App() {
     [items, selectedId, filteredItems]
   );
 
-  const handleCreateCustomVault = async (e: React.FormEvent) => {
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (masterInput.length < 8) {
       setAuthError('Master Password should be at least 8 characters.');
       return;
     }
-    if (pinInput && !/^\d{6}$/.test(pinInput)) {
-      setAuthError('Quick-Unlock PIN must be exactly 6 numeric digits (or leave blank).');
-      return;
+
+    if (authMode === 'create') {
+      if (masterInput !== confirmMasterInput) {
+        setAuthError('Master Passwords do not match.');
+        return;
+      }
+      if (pinInput && !/^\d{6}$/.test(pinInput)) {
+        setAuthError('Quick-Unlock PIN must be exactly 6 numeric digits (or leave blank).');
+        return;
+      }
     }
 
     const trimmedAlias = aliasInput.trim();
@@ -226,7 +240,8 @@ export function App() {
         const cloudAuth = await authenticateSupabaseVaultUser(
           supabaseClient,
           trimmedAlias,
-          masterInput
+          masterInput,
+          authMode === 'signin' ? 'signin' : 'signup'
         );
         resolvedUserId = cloudAuth.userId;
         resolvedLabel = cloudAuth.email;
@@ -235,19 +250,38 @@ export function App() {
           (await remoteAdapter.getProfile(resolvedUserId)) ??
           (await pwaDb.profiles.get(resolvedUserId));
 
-        if (existingProfile) {
+        if (authMode === 'signin') {
+          if (!existingProfile) {
+            throw new Error(
+              'No encrypted vault profile found for this account. Please create a vault first.'
+            );
+          }
           await unlockWithMasterPassword(resolvedUserId, masterInput);
         } else {
+          if (existingProfile) {
+            throw new Error('An encrypted vault already exists for this email. Please Sign In instead.');
+          }
           await initializeNewVault(resolvedUserId, masterInput, 'argon2id');
           await syncNow();
         }
       } else {
-        resolvedUserId = globalThis.crypto.randomUUID();
-        resolvedLabel = trimmedAlias || 'Personal Vault';
-        await initializeNewVault(resolvedUserId, masterInput, 'argon2id');
+        if (authMode === 'signin') {
+          const profiles = await pwaDb.profiles.toArray();
+          const localProfile = profiles[0];
+          if (!localProfile) {
+            throw new Error('No local vault found on this device. Switch to Create Encrypted Vault.');
+          }
+          resolvedUserId = localProfile.user_id;
+          resolvedLabel = trimmedAlias || 'Personal Vault';
+          await unlockWithMasterPassword(resolvedUserId, masterInput);
+        } else {
+          resolvedUserId = globalThis.crypto.randomUUID();
+          resolvedLabel = trimmedAlias || 'Personal Vault';
+          await initializeNewVault(resolvedUserId, masterInput, 'argon2id');
+        }
       }
 
-      if (pinInput) {
+      if (authMode === 'create' && pinInput) {
         await enableQuickPin(pinInput);
       }
       const nextPrefs = saveUiPreferences({
@@ -257,7 +291,11 @@ export function App() {
       });
       setPrefs(nextPrefs);
       setMasterInput('');
+      setConfirmMasterInput('');
       setPinInput('');
+      setShowMaster(false);
+      setShowConfirmMaster(false);
+      setShowPin(false);
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : 'Failed to unlock or create vault');
     } finally {
@@ -310,13 +348,13 @@ export function App() {
             </p>
           </div>
 
-          {/* Sign in or create an encrypted personal vault */}
+          {/* Sign In or Create Encrypted Vault */}
           <form
-            onSubmit={(e) => void handleCreateCustomVault(e)}
+            onSubmit={(e) => void handleAuthSubmit(e)}
             className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-3.5"
           >
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-              Sign In or Create Cloud Vault
+              {authMode === 'signin' ? 'Sign In to Cloud Vault' : 'Create Encrypted Vault'}
             </h2>
 
             {authError && (
@@ -339,38 +377,139 @@ export function App() {
               <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
                 Master Password (never leaves device) *
               </label>
-              <input
-                type="password"
-                required
-                value={masterInput}
-                onChange={(e) => setMasterInput(e.target.value)}
-                placeholder="Minimum 8 characters"
-                className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-              />
+              <div className="relative">
+                <input
+                  type={showMaster ? 'text' : 'password'}
+                  required
+                  value={masterInput}
+                  onChange={(e) => setMasterInput(e.target.value)}
+                  placeholder="Minimum 8 characters"
+                  className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowMaster((prev) => !prev)}
+                  aria-label={showMaster ? 'Hide master password' : 'Show master password'}
+                  title={showMaster ? 'Hide master password' : 'Show master password'}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                >
+                  {showMaster ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
-                6-Digit Quick-Unlock PIN (optional)
-              </label>
-              <input
-                type="password"
-                inputMode="numeric"
-                maxLength={6}
-                value={pinInput}
-                onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-                placeholder="e.g. 048291"
-                className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-              />
-            </div>
+            {authMode === 'create' && (
+              <>
+                <div>
+                  <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
+                    Confirm Master Password *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmMaster ? 'text' : 'password'}
+                      required
+                      value={confirmMasterInput}
+                      onChange={(e) => setConfirmMasterInput(e.target.value)}
+                      placeholder="Re-enter Master Password"
+                      className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmMaster((prev) => !prev)}
+                      aria-label={
+                        showConfirmMaster
+                          ? 'Hide confirm master password'
+                          : 'Show confirm master password'
+                      }
+                      title={
+                        showConfirmMaster
+                          ? 'Hide confirm master password'
+                          : 'Show confirm master password'
+                      }
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                    >
+                      {showConfirmMaster ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
+                    6-Digit Quick-Unlock PIN (optional)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPin ? 'text' : 'password'}
+                      inputMode="numeric"
+                      maxLength={6}
+                      value={pinInput}
+                      onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
+                      placeholder="e.g. 048291"
+                      className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPin((prev) => !prev)}
+                      aria-label={showPin ? 'Hide Quick-Unlock PIN' : 'Show Quick-Unlock PIN'}
+                      title={showPin ? 'Hide Quick-Unlock PIN' : 'Show Quick-Unlock PIN'}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                    >
+                      {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
             <button
               type="submit"
               disabled={authBusy}
               className="w-full py-3 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-sm font-semibold text-white shadow-[0_0_24px_rgba(139,92,246,0.4)] transition-all disabled:opacity-60"
             >
-              {authBusy ? 'Authenticating & Deriving Argon2id Keys…' : 'Sign In / Create Encrypted Vault'}
+              {authBusy
+                ? authMode === 'signin'
+                  ? 'Authenticating & Decrypting Vault…'
+                  : 'Creating Encrypted Vault (Argon2id)…'
+                : authMode === 'signin'
+                  ? 'Sign In'
+                  : 'Create Encrypted Vault'}
             </button>
+
+            <div className="pt-1 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode((prev) => (prev === 'signin' ? 'create' : 'signin'));
+                  setAuthError(null);
+                  setConfirmMasterInput('');
+                  setPinInput('');
+                  setShowMaster(false);
+                  setShowConfirmMaster(false);
+                  setShowPin(false);
+                }}
+                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                {authMode === 'signin' ? (
+                  <>
+                    New to Pass-Vault?{' '}
+                    <span className="font-semibold text-[var(--accent-soft)] hover:underline">
+                      Create Encrypted Vault
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Already have a vault?{' '}
+                    <span className="font-semibold text-[var(--accent-soft)] hover:underline">
+                      Sign In
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
           </form>
         </div>
       </div>
