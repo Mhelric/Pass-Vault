@@ -10,6 +10,7 @@ build/
 .output/
 coverage/
 *.tsbuildinfo
+.vercel/
 
 # Environment & local secrets
 .env
