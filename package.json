@@ -9,9 +9,10 @@
   ],
   "scripts": {
     "dev": "npm --workspace @vault/pwa run dev",
+    "build": "npm --workspace @vault/pwa run build && npm --workspace @vault/extension run build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -b packages/crypto packages/core packages/ui apps/pwa"
+    "typecheck": "tsc -b packages/crypto packages/core packages/ui apps/pwa apps/extension"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

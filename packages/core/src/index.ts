@@ -7,3 +7,4 @@ export * from './store/useVaultStore.js';
 export * from './importer/blockSplitter.js';
 export * from './importer/classifiers.js';
 export * from './importer/keepParser.js';
+export * from './autofill/domainMatcher.js';
