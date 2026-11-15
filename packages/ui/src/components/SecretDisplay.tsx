@@ -20,7 +20,7 @@ function classifyCharColor(ch: string): string {
 }
 
 /**
- * Renders sensitive strings (passwords, PINs, card numbers, CVVs) in JetBrains Mono
+ * Renders sensitive strings (passwords, PINs, card numbers, CVVs) in clean tabular typography
  * with color-coded character classes and toggleable visibility.
  */
 export function SecretDisplay({

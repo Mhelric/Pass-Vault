@@ -1,6 +1,6 @@
 import { MAX_PIN_ATTEMPTS } from '@vault/core';
-import { PinKeypad } from '@vault/ui';
-import { Eye, EyeOff, KeyRound, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { PinKeypad, SecretInput } from '@vault/ui';
+import { KeyRound, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { DEMO_BIO_SECRET_STORAGE_KEY } from '../demoSeed.js';
 import { saveUiPreferences, useVault } from '../vaultRuntime.js';
@@ -26,7 +26,6 @@ export function LockOverlay({ aliasLabel }: LockOverlayProps) {
     lockState === 'master_password_required' || !hasPinConfigured
   );
   const [masterPassword, setMasterPassword] = useState('');
-  const [showMasterPassword, setShowMasterPassword] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
@@ -161,26 +160,15 @@ export function LockOverlay({ aliasLabel }: LockOverlayProps) {
               <p className="text-xs text-[var(--status-danger)]">{localError ?? lastError}</p>
             )}
 
-            <div className="relative">
-              <input
-                type={showMasterPassword ? 'text' : 'password'}
-                required
-                autoFocus
-                value={masterPassword}
-                onChange={(e) => setMasterPassword(e.target.value)}
-                placeholder="Master Password"
-                className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-              />
-              <button
-                type="button"
-                onClick={() => setShowMasterPassword((prev) => !prev)}
-                aria-label={showMasterPassword ? 'Hide master password' : 'Show master password'}
-                title={showMasterPassword ? 'Hide master password' : 'Show master password'}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-              >
-                {showMasterPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+            <SecretInput
+              required
+              autoFocus
+              value={masterPassword}
+              onChange={(e) => setMasterPassword(e.target.value)}
+              placeholder="Master Password"
+              revealLabel="Show master password"
+              hideLabel="Hide master password"
+            />
 
             <button
               type="submit"

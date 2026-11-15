@@ -29,8 +29,9 @@
   --secret-digit: #c084fc;
   --secret-symbol: #34d399;
 
-  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  --font-sans: 'Plus Jakarta Sans', 'DM Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-secret: 'DM Sans', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  --font-mono: 'DM Sans', 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
 
   /* Motion Timing */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
@@ -44,6 +45,16 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+input,
+textarea {
+  caret-color: var(--accent-soft);
+}
+
+input:focus,
+textarea:focus {
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.16), 0 0 18px rgba(139, 92, 246, 0.14);
 }
 
 button,
@@ -152,11 +163,27 @@ button:not(:disabled):active {
   animation: vaultShimmer 1.35s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
+@keyframes vaultKeystrokePulse {
+  0% {
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.28), 0 0 22px rgba(168, 85, 247, 0.34);
+    border-color: var(--accent-glow);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.16), 0 0 18px rgba(139, 92, 246, 0.14);
+    border-color: var(--accent-primary);
+  }
+}
+
+.vault-typing-pulse {
+  animation: vaultKeystrokePulse 260ms var(--ease-spring);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .vault-fade-in,
   .vault-scale-in,
   .vault-slide-up,
   .vault-shield-pulse,
+  .vault-typing-pulse,
   .vault-shimmer-bar::after {
     animation: none !important;
   }
@@ -170,9 +197,12 @@ button:not(:disabled):active {
   }
 }
 
+.font-secret,
 .font-mono-secret {
-  font-family: var(--font-mono);
+  font-family: var(--font-secret);
+  font-variant-numeric: tabular-nums;
   font-variant-ligatures: none;
+  letter-spacing: 0.015em;
 }
 
 /* Subtle custom dark scrollbar */

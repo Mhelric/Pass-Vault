@@ -3,12 +3,10 @@ import {
   type DecryptedVaultItem,
   type VaultCategory,
 } from '@vault/core';
-import { CategoryBadge, CopyButton } from '@vault/ui';
+import { CategoryBadge, CopyButton, SecretInput } from '@vault/ui';
 import {
   Command,
   CreditCard,
-  Eye,
-  EyeOff,
   FileText,
   FileUp,
   Hash,
@@ -82,9 +80,6 @@ export function App() {
   const [masterInput, setMasterInput] = useState('');
   const [confirmMasterInput, setConfirmMasterInput] = useState('');
   const [pinInput, setPinInput] = useState('');
-  const [showMaster, setShowMaster] = useState(false);
-  const [showConfirmMaster, setShowConfirmMaster] = useState(false);
-  const [showPin, setShowPin] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
   const [authStepLabel, setAuthStepLabel] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -335,9 +330,6 @@ export function App() {
       setMasterInput('');
       setConfirmMasterInput('');
       setPinInput('');
-      setShowMaster(false);
-      setShowConfirmMaster(false);
-      setShowPin(false);
     } catch (err) {
       setAuthError(err instanceof Error ? err.message : 'Failed to unlock or create vault');
     } finally {
@@ -460,25 +452,14 @@ export function App() {
                 <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
                   Master Password (never leaves device) *
                 </label>
-                <div className="relative">
-                  <input
-                    type={showMaster ? 'text' : 'password'}
-                    required
-                    value={masterInput}
-                    onChange={(e) => setMasterInput(e.target.value)}
-                    placeholder="Minimum 8 characters"
-                    className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowMaster((prev) => !prev)}
-                    aria-label={showMaster ? 'Hide master password' : 'Show master password'}
-                    title={showMaster ? 'Hide master password' : 'Show master password'}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                  >
-                    {showMaster ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+                <SecretInput
+                  required
+                  value={masterInput}
+                  onChange={(e) => setMasterInput(e.target.value)}
+                  placeholder="Minimum 8 characters"
+                  revealLabel="Show master password"
+                  hideLabel="Hide master password"
+                />
               </div>
 
               {authMode === 'create' && (
@@ -487,63 +468,30 @@ export function App() {
                     <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
                       Confirm Master Password *
                     </label>
-                    <div className="relative">
-                      <input
-                        type={showConfirmMaster ? 'text' : 'password'}
-                        required
-                        value={confirmMasterInput}
-                        onChange={(e) => setConfirmMasterInput(e.target.value)}
-                        placeholder="Re-enter Master Password"
-                        className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmMaster((prev) => !prev)}
-                        aria-label={
-                          showConfirmMaster
-                            ? 'Hide confirm master password'
-                            : 'Show confirm master password'
-                        }
-                        title={
-                          showConfirmMaster
-                            ? 'Hide confirm master password'
-                            : 'Show confirm master password'
-                        }
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                      >
-                        {showConfirmMaster ? (
-                          <EyeOff className="w-4 h-4" />
-                        ) : (
-                          <Eye className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
+                    <SecretInput
+                      required
+                      value={confirmMasterInput}
+                      onChange={(e) => setConfirmMasterInput(e.target.value)}
+                      placeholder="Re-enter Master Password"
+                      revealLabel="Show confirm master password"
+                      hideLabel="Hide confirm master password"
+                    />
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
                       6-Digit Quick-Unlock PIN (optional)
                     </label>
-                    <div className="relative">
-                      <input
-                        type={showPin ? 'text' : 'password'}
-                        inputMode="numeric"
-                        maxLength={6}
-                        value={pinInput}
-                        onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-                        placeholder="e.g. 048291"
-                        className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPin((prev) => !prev)}
-                        aria-label={showPin ? 'Hide Quick-Unlock PIN' : 'Show Quick-Unlock PIN'}
-                        title={showPin ? 'Hide Quick-Unlock PIN' : 'Show Quick-Unlock PIN'}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                      >
-                        {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
+                    <SecretInput
+                      inputMode="numeric"
+                      maxLength={6}
+                      maxIndicatorLength={6}
+                      value={pinInput}
+                      onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
+                      placeholder="e.g. 048291"
+                      revealLabel="Show Quick-Unlock PIN"
+                      hideLabel="Hide Quick-Unlock PIN"
+                    />
                   </div>
                 </>
               )}
@@ -570,9 +518,6 @@ export function App() {
                     setAuthError(null);
                     setConfirmMasterInput('');
                     setPinInput('');
-                    setShowMaster(false);
-                    setShowConfirmMaster(false);
-                    setShowPin(false);
                   }}
                   className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                 >

@@ -5,12 +5,11 @@ import {
   type DecryptedVaultItem,
 } from '@vault/core';
 import { evaluateSecretStrength, isPlatformBiometricAvailable, randomBytes } from '@vault/crypto';
+import { SecretInput } from '@vault/ui';
 import {
   AlertTriangle,
   CheckCircle2,
   Download,
-  Eye,
-  EyeOff,
   Fingerprint,
   HardDriveUpload,
   KeyRound,
@@ -46,14 +45,12 @@ export function SettingsView({
   const signOut = useVault((s) => s.signOut);
 
   const [newPin, setNewPin] = useState('');
-  const [showNewPin, setShowNewPin] = useState(false);
   const [pinMsg, setPinMsg] = useState<string | null>(null);
   const [bioHardwareSupported, setBioHardwareSupported] = useState(false);
 
   const restoreInputRef = useRef<HTMLInputElement | null>(null);
   const [pendingRestoreJson, setPendingRestoreJson] = useState<string | null>(null);
   const [restoreMasterPassword, setRestoreMasterPassword] = useState('');
-  const [showRestoreMaster, setShowRestoreMaster] = useState(false);
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const [backupError, setBackupError] = useState<string | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -192,26 +189,18 @@ export function SettingsView({
         </div>
 
         <form onSubmit={(e) => void handleSavePin(e)} className="flex gap-2">
-          <div className="relative flex-1">
-            <input
-              type={showNewPin ? 'text' : 'password'}
-              inputMode="numeric"
-              maxLength={6}
-              value={newPin}
-              onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
-              placeholder="Enter 6-digit PIN"
-              className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-            />
-            <button
-              type="button"
-              onClick={() => setShowNewPin((prev) => !prev)}
-              aria-label={showNewPin ? 'Hide PIN' : 'Show PIN'}
-              title={showNewPin ? 'Hide PIN' : 'Show PIN'}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-            >
-              {showNewPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
+          <SecretInput
+            inputMode="numeric"
+            maxLength={6}
+            maxIndicatorLength={6}
+            value={newPin}
+            onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ''))}
+            placeholder="Enter 6-digit PIN"
+            revealLabel="Show PIN"
+            hideLabel="Hide PIN"
+            containerClassName="flex-1"
+            className="!py-2"
+          />
           <button
             type="submit"
             className="px-4 py-2 rounded-xl text-xs font-semibold bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-white"
@@ -348,25 +337,17 @@ export function SettingsView({
 
         {pendingRestoreJson && (
           <form onSubmit={(e) => void handleConfirmRestore(e)} className="flex gap-2 pt-1">
-            <div className="relative flex-1">
-              <input
-                type={showRestoreMaster ? 'text' : 'password'}
-                required
-                value={restoreMasterPassword}
-                onChange={(e) => setRestoreMasterPassword(e.target.value)}
-                placeholder="Backup Master Password"
-                className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3 pr-9 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-              />
-              <button
-                type="button"
-                onClick={() => setShowRestoreMaster((prev) => !prev)}
-                aria-label={showRestoreMaster ? 'Hide backup master password' : 'Show backup master password'}
-                title={showRestoreMaster ? 'Hide backup master password' : 'Show backup master password'}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-              >
-                {showRestoreMaster ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              </button>
-            </div>
+            <SecretInput
+              compact
+              required
+              value={restoreMasterPassword}
+              onChange={(e) => setRestoreMasterPassword(e.target.value)}
+              placeholder="Backup Master Password"
+              revealLabel="Show backup master password"
+              hideLabel="Hide backup master password"
+              containerClassName="flex-1"
+              className="!rounded-xl !py-2"
+            />
             <button
               type="submit"
               disabled={isRestoring}
