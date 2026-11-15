@@ -4,6 +4,7 @@ import {
   Command,
   CreditCard,
   FileText,
+  FileUp,
   Hash,
   KeyRound,
   Lock,
@@ -20,6 +21,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CommandPalette } from './components/CommandPalette.js';
 import { GeneratorView } from './components/GeneratorView.js';
+import { ImportView } from './components/ImportView.js';
 import { ItemFormModal } from './components/ItemFormModal.js';
 import { ItemInspector } from './components/ItemInspector.js';
 import { LockOverlay } from './components/LockOverlay.js';
@@ -35,7 +37,7 @@ import {
   vaultStore,
 } from './vaultRuntime.js';
 
-type ActiveTab = 'vault' | 'pins' | 'generator' | 'settings';
+type ActiveTab = 'vault' | 'pins' | 'generator' | 'import' | 'settings';
 type VaultFilter = 'all' | 'favorites' | VaultCategory;
 
 export function App() {
@@ -472,6 +474,18 @@ export function App() {
             </button>
             <button
               type="button"
+              onClick={() => setActiveTab('import')}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                activeTab === 'import'
+                  ? 'bg-[var(--accent-tint)] text-white border border-[var(--accent-primary)]/35'
+                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] border border-transparent'
+              }`}
+            >
+              <FileUp className="w-4 h-4 text-[var(--accent-soft)]" />
+              <span>Import .txt / Keep</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab('settings')}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                 activeTab === 'settings'
@@ -514,9 +528,11 @@ export function App() {
                   ? 'PINs & Passcodes'
                   : activeTab === 'generator'
                     ? 'Generator'
-                    : activeTab === 'settings'
-                      ? 'Security'
-                      : 'Vault'}
+                    : activeTab === 'import'
+                      ? 'Import Notes'
+                      : activeTab === 'settings'
+                        ? 'Security'
+                        : 'Vault'}
               </span>
             </div>
 
@@ -585,6 +601,21 @@ export function App() {
                 setPrefillCategory(category);
                 setPrefillSecret(secret);
                 setFormOpen(true);
+              }}
+            />
+          </div>
+        ) : activeTab === 'import' ? (
+          <div className="p-4 md:p-8 flex-1 overflow-y-auto">
+            <ImportView
+              onImportItems={async (importedItems) => {
+                for (const item of importedItems) {
+                  await saveItem(item);
+                }
+                if (importedItems[0]) {
+                  setSelectedId(importedItems[0].id);
+                }
+                setActiveTab('vault');
+                setFilter('all');
               }}
             />
           </div>
@@ -715,7 +746,7 @@ export function App() {
       </main>
 
       {/* Mobile Slide-Up Bottom Sheet Inspector (< 768px) */}
-      {mobileSheetOpen && selectedItem && activeTab !== 'generator' && activeTab !== 'settings' && (
+      {mobileSheetOpen && selectedItem && (activeTab === 'vault' || activeTab === 'pins') && (
         <div
           className="md:hidden fixed inset-0 z-40 flex items-end bg-black/70 backdrop-blur-xs"
           onClick={() => setMobileSheetOpen(false)}
@@ -769,11 +800,12 @@ export function App() {
       )}
 
       {/* Mobile Fixed Bottom Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-[var(--bg-elevated)]/95 backdrop-blur border-t border-[var(--border-subtle)] grid grid-cols-4 px-2 py-1.5">
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-[var(--bg-elevated)]/95 backdrop-blur border-t border-[var(--border-subtle)] grid grid-cols-5 px-1 py-1.5">
         {[
           { id: 'vault' as const, label: 'Vault', icon: Shield },
           { id: 'pins' as const, label: 'PINs', icon: Hash },
-          { id: 'generator' as const, label: 'Generator', icon: Wand2 },
+          { id: 'generator' as const, label: 'Gen', icon: Wand2 },
+          { id: 'import' as const, label: 'Import', icon: FileUp },
           { id: 'settings' as const, label: 'Security', icon: Settings },
         ].map((tab) => {
           const Icon = tab.icon;

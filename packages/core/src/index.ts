@@ -4,3 +4,6 @@ export * from './db/dexie.js';
 export * from './sync/supabaseClient.js';
 export * from './sync/deltaSync.js';
 export * from './store/useVaultStore.js';
+export * from './importer/blockSplitter.js';
+export * from './importer/classifiers.js';
+export * from './importer/keepParser.js';
