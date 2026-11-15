@@ -95,6 +95,11 @@ export async function runDeltaSync(params: {
   let conflictCount = 0;
 
   for (const entry of queueEntries) {
+    if (entry.queueId !== undefined) {
+      const stillQueued = await db.syncQueue.get(entry.queueId);
+      if (!stillQueued) continue;
+    }
+
     const localRow = await db.items.get(entry.itemId);
     if (!localRow) {
       if (entry.queueId !== undefined) {
@@ -104,7 +109,14 @@ export async function runDeltaSync(params: {
     }
 
     const remoteRow = await remote.getItemById(userId, entry.itemId);
-    const hasConflict = Boolean(remoteRow && remoteRow.version > entry.expectedVersion);
+    const isSamePayload = Boolean(
+      remoteRow &&
+        remoteRow.encrypted_payload === localRow.encrypted_payload &&
+        remoteRow.iv === localRow.iv
+    );
+    const hasConflict = Boolean(
+      remoteRow && remoteRow.version > entry.expectedVersion && !isSamePayload
+    );
 
     if (hasConflict && remoteRow) {
       if (entry.operation === 'upsert') {

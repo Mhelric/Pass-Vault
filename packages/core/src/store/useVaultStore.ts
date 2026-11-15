@@ -87,6 +87,8 @@ export function createVaultStore(deps: VaultStoreDeps = {}) {
     return decryptActiveVaultRows(rows, vek);
   }
 
+  let activeSyncPromise: Promise<DeltaSyncResult | null> | null = null;
+
   return createStore<VaultStoreState>((set, get) => ({
     userId: null,
     lockState: 'unauthenticated',
@@ -404,6 +406,10 @@ export function createVaultStore(deps: VaultStoreDeps = {}) {
     },
 
     async syncNow() {
+      if (activeSyncPromise) {
+        return activeSyncPromise;
+      }
+
       const { userId, vek } = get();
       if (!userId) {
         return null;
@@ -413,29 +419,35 @@ export function createVaultStore(deps: VaultStoreDeps = {}) {
       const remote = getRemote();
       set({ isSyncing: true, lastError: null });
 
-      try {
-        const result = await runDeltaSync({ db, remote, userId, vek });
-        if (vek) {
-          const refreshedItems = await loadAndDecryptItems(db, userId, vek);
+      activeSyncPromise = (async () => {
+        try {
+          const result = await runDeltaSync({ db, remote, userId, vek });
+          if (vek) {
+            const refreshedItems = await loadAndDecryptItems(db, userId, vek);
+            set({
+              items: refreshedItems,
+              lastSyncAt: result.lastSyncAt,
+              isSyncing: false,
+            });
+          } else {
+            set({
+              lastSyncAt: result.lastSyncAt,
+              isSyncing: false,
+            });
+          }
+          return result;
+        } catch (error) {
           set({
-            items: refreshedItems,
-            lastSyncAt: result.lastSyncAt,
             isSyncing: false,
+            lastError: error instanceof Error ? error.message : 'Sync failed',
           });
-        } else {
-          set({
-            lastSyncAt: result.lastSyncAt,
-            isSyncing: false,
-          });
+          throw error;
         }
-        return result;
-      } catch (error) {
-        set({
-          isSyncing: false,
-          lastError: error instanceof Error ? error.message : 'Sync failed',
-        });
-        throw error;
-      }
+      })().finally(() => {
+        activeSyncPromise = null;
+      });
+
+      return activeSyncPromise;
     },
   }));
 }

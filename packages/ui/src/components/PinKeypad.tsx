@@ -1,5 +1,5 @@
 import { Delete, Fingerprint } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface PinKeypadProps {
   pinLength?: number;
@@ -25,29 +25,37 @@ export function PinKeypad({
   error = null,
 }: PinKeypadProps) {
   const [digits, setDigits] = useState('');
+  const digitsRef = useRef('');
+  const submittingRef = useRef(false);
 
   const handleDigit = useCallback(
     (digit: string) => {
-      if (isSubmitting) return;
-      setDigits((prev) => {
-        if (prev.length >= pinLength) return prev;
-        const next = prev + digit;
-        if (next.length === pinLength) {
-          queueMicrotask(() => {
-            void Promise.resolve(onComplete(next)).finally(() => {
-              setDigits('');
-            });
+      if (isSubmitting || submittingRef.current) return;
+      if (digitsRef.current.length >= pinLength) return;
+
+      const next = digitsRef.current + digit;
+      digitsRef.current = next;
+      setDigits(next);
+
+      if (next.length === pinLength) {
+        submittingRef.current = true;
+        queueMicrotask(() => {
+          void Promise.resolve(onComplete(next)).finally(() => {
+            submittingRef.current = false;
+            digitsRef.current = '';
+            setDigits('');
           });
-        }
-        return next;
-      });
+        });
+      }
     },
     [isSubmitting, onComplete, pinLength]
   );
 
   const handleBackspace = useCallback(() => {
-    if (isSubmitting) return;
-    setDigits((prev) => prev.slice(0, -1));
+    if (isSubmitting || submittingRef.current) return;
+    const next = digitsRef.current.slice(0, -1);
+    digitsRef.current = next;
+    setDigits(next);
   }, [isSubmitting]);
 
   useEffect(() => {
