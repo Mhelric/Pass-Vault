@@ -26,6 +26,7 @@ export interface RemoteVaultAdapter {
   getItemById(userId: string, itemId: string): Promise<EncryptedVaultRow | null>;
   upsertItem(row: EncryptedVaultRow): Promise<EncryptedVaultRow>;
   pullItemsUpdatedSince(userId: string, sinceIso: string | null): Promise<EncryptedVaultRow[]>;
+  clearAll?: () => void;
 }
 
 export function createSupabaseRemoteAdapter(client: SupabaseClient): RemoteVaultAdapter {
@@ -161,6 +162,11 @@ export function createInMemoryRemoteAdapter(): RemoteVaultAdapter {
         }
       }
       return results.sort((a, b) => a.updated_at.localeCompare(b.updated_at));
+    },
+
+    clearAll(): void {
+      profiles.clear();
+      items.clear();
     },
   };
 }

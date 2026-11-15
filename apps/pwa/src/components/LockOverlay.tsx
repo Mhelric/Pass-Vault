@@ -3,7 +3,7 @@ import { PinKeypad } from '@vault/ui';
 import { KeyRound, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { DEMO_BIO_SECRET_STORAGE_KEY, DEMO_MASTER_PASSWORD, DEMO_QUICK_PIN } from '../demoSeed.js';
-import { useVault } from '../vaultRuntime.js';
+import { saveUiPreferences, useVault } from '../vaultRuntime.js';
 
 export interface LockOverlayProps {
   aliasLabel: string | null;
@@ -193,7 +193,10 @@ export function LockOverlay({ aliasLabel, isDemoMode }: LockOverlayProps) {
       <div className="text-center">
         <button
           type="button"
-          onClick={() => void signOut()}
+          onClick={() => {
+            saveUiPreferences({ lastUserId: null, aliasLabel: null, isDemoMode: false });
+            void signOut();
+          }}
           className="text-xs text-[var(--text-muted)] hover:text-red-300 transition-colors"
         >
           Switch Account / Reset Demo

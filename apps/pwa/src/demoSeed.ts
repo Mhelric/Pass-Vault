@@ -1,6 +1,6 @@
 import type { CardItem, DecryptedVaultItem, LoginItem, NoteItem, PinItem } from '@vault/core';
 import { randomBytes } from '@vault/crypto';
-import { pwaDb, saveUiPreferences, vaultStore } from './vaultRuntime.js';
+import { pwaDb, remoteAdapter, saveUiPreferences, vaultStore } from './vaultRuntime.js';
 
 export const DEMO_USER_ID = '00000000-0000-4000-8000-000000000001';
 export const DEMO_MASTER_PASSWORD = 'ObsidianVault!Demo#2026';
@@ -139,7 +139,8 @@ function buildDemoItems(): DecryptedVaultItem[] {
 export async function launchInteractiveDemoVault(): Promise<void> {
   const store = vaultStore.getState();
 
-  // Clear previous demo rows cleanly for a fresh predictable sandbox
+  // Clear previous demo rows and ephemeral remote state for a fresh predictable sandbox
+  remoteAdapter.clearAll?.();
   await pwaDb.transaction('rw', pwaDb.profiles, pwaDb.items, pwaDb.syncQueue, pwaDb.deviceKeys, async () => {
     await pwaDb.profiles.clear();
     await pwaDb.items.clear();

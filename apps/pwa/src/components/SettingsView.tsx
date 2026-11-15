@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEMO_BIO_SECRET_STORAGE_KEY } from '../demoSeed.js';
-import { isSupabaseConfigured, pwaDb, useVault } from '../vaultRuntime.js';
+import { isSupabaseConfigured, pwaDb, saveUiPreferences, useVault } from '../vaultRuntime.js';
 
 export interface SettingsViewProps {
   autoLockSeconds: number;
@@ -368,7 +368,10 @@ export function SettingsView({
         </button>
         <button
           type="button"
-          onClick={() => void signOut()}
+          onClick={() => {
+            saveUiPreferences({ lastUserId: null, aliasLabel: null, isDemoMode: false });
+            void signOut();
+          }}
           className="flex items-center justify-center gap-2 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-sm font-semibold text-red-300 hover:bg-red-500/20 transition-colors"
         >
           <LogOut className="w-4 h-4" />
