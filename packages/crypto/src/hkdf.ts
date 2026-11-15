@@ -135,3 +135,28 @@ export async function unwrapVekWithPin(
     zeroize(pinKek);
   }
 }
+
+/**
+ * Derive a deterministic, domain-separated 256-bit authentication secret for Supabase Auth
+ * using HKDF-SHA256 so the raw Master Password never leaves the client device.
+ */
+export async function deriveAuthPassword(
+  masterPassword: string,
+  email: string
+): Promise<string> {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail || !masterPassword) {
+    throw new VaultCryptoError('Email and Master Password are required');
+  }
+  const saltBytes = utf8ToBytes(`vault-auth-salt-v1:${normalizedEmail}`);
+  const subkey = await deriveSubkey(
+    utf8ToBytes(masterPassword),
+    'vault-supabase-auth-v1',
+    saltBytes
+  );
+  try {
+    return `v1_${bytesToBase64(subkey)}`;
+  } finally {
+    zeroize(subkey);
+  }
+}

@@ -14,10 +14,12 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-export const remoteAdapter = isSupabaseConfigured
-  ? createSupabaseRemoteAdapter(
-      createVaultSupabaseClient({ url: supabaseUrl!, anonKey: supabaseAnonKey! })
-    )
+export const supabaseClient = isSupabaseConfigured
+  ? createVaultSupabaseClient({ url: supabaseUrl!, anonKey: supabaseAnonKey! })
+  : null;
+
+export const remoteAdapter = supabaseClient
+  ? createSupabaseRemoteAdapter(supabaseClient)
   : createInMemoryRemoteAdapter();
 
 export const pwaDb = createVaultDatabase('obsidian-vault-pwa');

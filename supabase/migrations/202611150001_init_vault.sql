@@ -68,3 +68,21 @@ create policy "Users manage own vault items"
   for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+-- 4. Auto-confirm zero-knowledge vault accounts on signup so RLS sessions activate immediately
+create or replace function public.auto_confirm_vault_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  new.email_confirmed_at := coalesce(new.email_confirmed_at, now());
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_auto_confirm_vault_user on auth.users;
+create trigger trg_auto_confirm_vault_user
+  before insert on auth.users
+  for each row execute function public.auto_confirm_vault_user();

@@ -88,6 +88,7 @@ export function createVaultStore(deps: VaultStoreDeps = {}) {
   }
 
   let activeSyncPromise: Promise<DeltaSyncResult | null> | null = null;
+  let followUpSyncNeeded = false;
 
   return createStore<VaultStoreState>((set, get) => ({
     userId: null,
@@ -388,6 +389,10 @@ export function createVaultStore(deps: VaultStoreDeps = {}) {
         };
       });
 
+      void get()
+        .syncNow()
+        .catch(() => {});
+
       return item;
     },
 
@@ -403,10 +408,15 @@ export function createVaultStore(deps: VaultStoreDeps = {}) {
       set((state) => ({
         items: state.items.filter((entry) => entry.id !== itemId),
       }));
+
+      void get()
+        .syncNow()
+        .catch(() => {});
     },
 
     async syncNow() {
       if (activeSyncPromise) {
+        followUpSyncNeeded = true;
         return activeSyncPromise;
       }
 
@@ -421,7 +431,12 @@ export function createVaultStore(deps: VaultStoreDeps = {}) {
 
       activeSyncPromise = (async () => {
         try {
-          const result = await runDeltaSync({ db, remote, userId, vek });
+          let result: DeltaSyncResult;
+          do {
+            followUpSyncNeeded = false;
+            result = await runDeltaSync({ db, remote, userId, vek });
+          } while (followUpSyncNeeded);
+
           if (vek) {
             const refreshedItems = await loadAndDecryptItems(db, userId, vek);
             set({
@@ -444,6 +459,7 @@ export function createVaultStore(deps: VaultStoreDeps = {}) {
           throw error;
         }
       })().finally(() => {
+        followUpSyncNeeded = false;
         activeSyncPromise = null;
       });
 

@@ -1,4 +1,8 @@
-import type { DecryptedVaultItem, VaultCategory } from '@vault/core';
+import {
+  authenticateSupabaseVaultUser,
+  type DecryptedVaultItem,
+  type VaultCategory,
+} from '@vault/core';
 import { CategoryBadge, CopyButton } from '@vault/ui';
 import {
   Command,
@@ -32,7 +36,9 @@ import {
   getPrimarySecret,
   loadUiPreferences,
   pwaDb,
+  remoteAdapter,
   saveUiPreferences,
+  supabaseClient,
   useVault,
   vaultStore,
 } from './vaultRuntime.js';
@@ -47,6 +53,7 @@ export function App() {
   const isSyncing = useVault((s) => s.isSyncing);
   const hydrateSession = useVault((s) => s.hydrateSession);
   const initializeNewVault = useVault((s) => s.initializeNewVault);
+  const unlockWithMasterPassword = useVault((s) => s.unlockWithMasterPassword);
   const enableQuickPin = useVault((s) => s.enableQuickPin);
   const lockVault = useVault((s) => s.lockVault);
   const saveItem = useVault((s) => s.saveItem);
@@ -217,24 +224,57 @@ export function App() {
       setAuthError('Quick-Unlock PIN must be exactly 6 numeric digits (or leave blank).');
       return;
     }
+
+    const trimmedAlias = aliasInput.trim();
+    if (supabaseClient && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedAlias)) {
+      setAuthError('Enter a valid email address (e.g. yourname+vault@gmail.com) for cloud sync.');
+      return;
+    }
+
     setAuthBusy(true);
     setAuthError(null);
     try {
-      const newUserId = globalThis.crypto.randomUUID();
-      await initializeNewVault(newUserId, masterInput, 'argon2id');
+      let resolvedUserId: string;
+      let resolvedLabel: string;
+
+      if (supabaseClient) {
+        const cloudAuth = await authenticateSupabaseVaultUser(
+          supabaseClient,
+          trimmedAlias,
+          masterInput
+        );
+        resolvedUserId = cloudAuth.userId;
+        resolvedLabel = cloudAuth.email;
+
+        const existingProfile =
+          (await remoteAdapter.getProfile(resolvedUserId)) ??
+          (await pwaDb.profiles.get(resolvedUserId));
+
+        if (existingProfile) {
+          await unlockWithMasterPassword(resolvedUserId, masterInput);
+        } else {
+          await initializeNewVault(resolvedUserId, masterInput, 'argon2id');
+          await syncNow();
+        }
+      } else {
+        resolvedUserId = globalThis.crypto.randomUUID();
+        resolvedLabel = trimmedAlias || 'Personal Vault';
+        await initializeNewVault(resolvedUserId, masterInput, 'argon2id');
+      }
+
       if (pinInput) {
         await enableQuickPin(pinInput);
       }
       const nextPrefs = saveUiPreferences({
-        lastUserId: newUserId,
-        aliasLabel: aliasInput.trim() || 'Personal Vault',
+        lastUserId: resolvedUserId,
+        aliasLabel: resolvedLabel,
         isDemoMode: false,
       });
       setPrefs(nextPrefs);
       setMasterInput('');
       setPinInput('');
     } catch (err) {
-      setAuthError(err instanceof Error ? err.message : 'Failed to create vault');
+      setAuthError(err instanceof Error ? err.message : 'Failed to unlock or create vault');
     } finally {
       setAuthBusy(false);
     }
@@ -311,7 +351,7 @@ export function App() {
             className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-3.5"
           >
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-              Or Create a New Blank Vault
+              Sign In or Create Cloud Vault
             </h2>
 
             {authError && (
@@ -364,7 +404,7 @@ export function App() {
               disabled={authBusy}
               className="w-full py-2.5 rounded-xl bg-[var(--bg-surface)] hover:bg-white/10 border border-[var(--border-subtle)] text-sm font-semibold text-[var(--text-primary)] transition-colors disabled:opacity-60"
             >
-              Create Encrypted Vault
+              {authBusy ? 'Authenticating & Deriving Argon2id Keys…' : 'Sign In / Create Encrypted Vault'}
             </button>
           </form>
         </div>

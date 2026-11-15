@@ -1,4 +1,5 @@
 import {
+  authenticateSupabaseVaultUser,
   createInMemoryRemoteAdapter,
   createSupabaseRemoteAdapter,
   createVaultDatabase,
@@ -28,10 +29,10 @@ const extUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const extKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
 const extDb = createVaultDatabase('obsidian-vault-extension');
-const extRemote =
-  extUrl && extKey
-    ? createSupabaseRemoteAdapter(createVaultSupabaseClient({ url: extUrl, anonKey: extKey }))
-    : createInMemoryRemoteAdapter();
+const extClient = extUrl && extKey ? createVaultSupabaseClient({ url: extUrl, anonKey: extKey }) : null;
+const extRemote = extClient
+  ? createSupabaseRemoteAdapter(extClient)
+  : createInMemoryRemoteAdapter();
 
 const extVaultStore = createVaultStore({ db: extDb, remote: extRemote });
 const DEMO_EXT_USER_ID = '00000000-0000-4000-8000-000000000002';
@@ -42,6 +43,7 @@ export function PopupApp() {
   const items = useStore(extVaultStore, (s) => s.items);
   const hasPinConfigured = useStore(extVaultStore, (s) => s.hasPinConfigured);
   const initializeNewVault = useStore(extVaultStore, (s) => s.initializeNewVault);
+  const unlockWithMasterPassword = useStore(extVaultStore, (s) => s.unlockWithMasterPassword);
   const enableQuickPin = useStore(extVaultStore, (s) => s.enableQuickPin);
   const unlockWithPin = useStore(extVaultStore, (s) => s.unlockWithPin);
   const saveItem = useStore(extVaultStore, (s) => s.saveItem);
@@ -54,6 +56,12 @@ export function PopupApp() {
   const [statusNotice, setStatusNotice] = useState<string | null>(null);
   const [pinError, setPinError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Cloud auth form state
+  const [cloudEmail, setCloudEmail] = useState('');
+  const [cloudMaster, setCloudMaster] = useState('');
+  const [cloudPin, setCloudPin] = useState('');
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Quick generator state
   const [genMode, setGenMode] = useState<'password' | 'pin'>('password');
@@ -185,32 +193,124 @@ export function PopupApp() {
     window.setTimeout(() => setStatusNotice(null), 2500);
   };
 
+  const handleCloudSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!extClient) {
+      setAuthError('Cloud sync URL/key not configured in extension build.');
+      return;
+    }
+    const trimmedEmail = cloudEmail.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setAuthError('Enter a valid vault email address.');
+      return;
+    }
+    if (cloudMaster.length < 8) {
+      setAuthError('Master Password must be at least 8 characters.');
+      return;
+    }
+    if (cloudPin && !/^\d{6}$/.test(cloudPin)) {
+      setAuthError('Quick PIN must be 6 digits (or leave blank).');
+      return;
+    }
+
+    setBusy(true);
+    setAuthError(null);
+    try {
+      const { userId: cloudUserId } = await authenticateSupabaseVaultUser(
+        extClient,
+        trimmedEmail,
+        cloudMaster
+      );
+      const existingProfile =
+        (await extRemote.getProfile(cloudUserId)) ?? (await extDb.profiles.get(cloudUserId));
+
+      if (existingProfile) {
+        await unlockWithMasterPassword(cloudUserId, cloudMaster);
+      } else {
+        await initializeNewVault(cloudUserId, cloudMaster, 'argon2id');
+      }
+
+      if (cloudPin) {
+        await enableQuickPin(cloudPin);
+      }
+      setCloudMaster('');
+      setCloudPin('');
+    } catch (err) {
+      setAuthError(err instanceof Error ? err.message : 'Cloud sign-in failed');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (lockState === 'unauthenticated' || !userId) {
     return (
-      <div className="h-full w-full bg-[var(--bg-primary)] p-5 flex flex-col justify-between">
-        <div className="text-center mt-6 space-y-2.5">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center">
-            <Shield className="w-6 h-6 text-[var(--accent-soft)]" />
+      <div className="h-full w-full bg-[var(--bg-primary)] p-4 flex flex-col justify-between overflow-y-auto gap-3">
+        <div className="text-center mt-1 space-y-1.5">
+          <div className="w-10 h-10 mx-auto rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center">
+            <Shield className="w-5 h-5 text-[var(--accent-soft)]" />
           </div>
-          <h1 className="text-base font-bold text-[var(--text-primary)]">Obsidian Vault</h1>
-          <p className="text-xs text-[var(--text-muted)]">
-            Companion Browser Extension for zero-knowledge autofill & instant PIN lookup.
+          <h1 className="text-sm font-bold text-[var(--text-primary)]">Obsidian Vault</h1>
+          <p className="text-[11px] text-[var(--text-muted)]">
+            Zero-knowledge cloud sync & autofill
           </p>
         </div>
 
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => void handleLaunchExtensionDemo()}
-          className="w-full py-3 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-xs font-semibold text-white flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.35)] disabled:opacity-60"
-        >
-          <Sparkles className="w-4 h-4" />
-          <span>{busy ? 'Initializing…' : 'Launch Demo Extension Vault'}</span>
-        </button>
+        {extClient && (
+          <form
+            onSubmit={(e) => void handleCloudSignIn(e)}
+            className="rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-3 space-y-2"
+          >
+            {authError && <p className="text-[11px] text-[var(--status-danger)]">{authError}</p>}
+            <input
+              type="email"
+              required
+              value={cloudEmail}
+              onChange={(e) => setCloudEmail(e.target.value)}
+              placeholder="Vault Email (e.g. you+vault@gmail.com)"
+              className="w-full rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+            />
+            <input
+              type="password"
+              required
+              value={cloudMaster}
+              onChange={(e) => setCloudMaster(e.target.value)}
+              placeholder="Master Password"
+              className="w-full font-mono-secret rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+            />
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              value={cloudPin}
+              onChange={(e) => setCloudPin(e.target.value.replace(/\D/g, ''))}
+              placeholder="6-digit Quick PIN (optional)"
+              className="w-full font-mono-secret rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-2.5 py-1.5 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+            />
+            <button
+              type="submit"
+              disabled={busy}
+              className="w-full py-2 rounded-lg bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-xs font-semibold text-white disabled:opacity-60"
+            >
+              {busy ? 'Syncing Cloud Vault…' : 'Sign In / Sync Cloud Vault'}
+            </button>
+          </form>
+        )}
 
-        <p className="text-[11px] text-center text-[var(--text-muted)]">
-          Quick PIN: <span className="font-mono-secret text-[var(--accent-soft)]">123456</span>
-        </p>
+        <div className="space-y-1.5">
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void handleLaunchExtensionDemo()}
+            className="w-full py-2.5 rounded-xl bg-[var(--bg-surface)] hover:bg-white/10 border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)] flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[var(--accent-soft)]" />
+            <span>{busy ? 'Initializing…' : 'Launch Demo Extension Vault'}</span>
+          </button>
+
+          <p className="text-[10px] text-center text-[var(--text-muted)]">
+            Demo Quick PIN: <span className="font-mono-secret text-[var(--accent-soft)]">123456</span>
+          </p>
+        </div>
       </div>
     );
   }

@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { deriveAuthPassword } from '@vault/crypto';
 import type { EncryptedVaultRow, VaultProfileRow } from '../types/vault.js';
 
 export interface SupabaseConfig {
@@ -19,6 +20,57 @@ export function createVaultSupabaseClient(config: SupabaseConfig): SupabaseClien
   });
 }
 
+/**
+ * Sign in an existing zero-knowledge vault user or register a new one on Supabase Auth
+ * using a client-derived HKDF auth secret (never transmitting the raw Master Password).
+ */
+export async function authenticateSupabaseVaultUser(
+  client: SupabaseClient,
+  email: string,
+  masterPassword: string
+): Promise<{ userId: string; email: string }> {
+  const cleanEmail = email.trim().toLowerCase();
+  const authPassword = await deriveAuthPassword(masterPassword, cleanEmail);
+
+  const signInRes = await client.auth.signInWithPassword({
+    email: cleanEmail,
+    password: authPassword,
+  });
+
+  if (!signInRes.error && signInRes.data.user) {
+    return { userId: signInRes.data.user.id, email: cleanEmail };
+  }
+
+  const signUpRes = await client.auth.signUp({
+    email: cleanEmail,
+    password: authPassword,
+  });
+
+  if (signUpRes.error) {
+    if (signUpRes.error.message.toLowerCase().includes('already registered')) {
+      throw new Error('Incorrect Master Password for this vault email.');
+    }
+    throw new Error(`Cloud auth failed: ${signUpRes.error.message}`);
+  }
+
+  if (signUpRes.data.session && signUpRes.data.user) {
+    return { userId: signUpRes.data.user.id, email: cleanEmail };
+  }
+
+  const retrySignIn = await client.auth.signInWithPassword({
+    email: cleanEmail,
+    password: authPassword,
+  });
+  if (retrySignIn.error || !retrySignIn.data.user) {
+    throw new Error(
+      retrySignIn.error?.message ??
+        'Account created. Please check your email to confirm or try signing in.'
+    );
+  }
+
+  return { userId: retrySignIn.data.user.id, email: cleanEmail };
+}
+
 /** Remote backend contract so sync engine stays testable and decoupled from transport. */
 export interface RemoteVaultAdapter {
   getProfile(userId: string): Promise<VaultProfileRow | null>;
@@ -30,8 +82,19 @@ export interface RemoteVaultAdapter {
 }
 
 export function createSupabaseRemoteAdapter(client: SupabaseClient): RemoteVaultAdapter {
+  const fallback = createInMemoryRemoteAdapter();
+
+  async function isAuthenticatedAs(userId: string): Promise<boolean> {
+    const { data } = await client.auth.getSession();
+    return data.session?.user?.id === userId;
+  }
+
   return {
     async getProfile(userId: string): Promise<VaultProfileRow | null> {
+      if (!(await isAuthenticatedAs(userId))) {
+        return fallback.getProfile(userId);
+      }
+
       const { data, error } = await client
         .from('vault_profiles')
         .select('*')
@@ -45,6 +108,10 @@ export function createSupabaseRemoteAdapter(client: SupabaseClient): RemoteVault
     },
 
     async upsertProfile(profile: VaultProfileRow): Promise<VaultProfileRow> {
+      if (!(await isAuthenticatedAs(profile.user_id))) {
+        return fallback.upsertProfile(profile);
+      }
+
       const { data, error } = await client
         .from('vault_profiles')
         .upsert(profile, { onConflict: 'user_id' })
@@ -58,6 +125,10 @@ export function createSupabaseRemoteAdapter(client: SupabaseClient): RemoteVault
     },
 
     async getItemById(userId: string, itemId: string): Promise<EncryptedVaultRow | null> {
+      if (!(await isAuthenticatedAs(userId))) {
+        return fallback.getItemById(userId, itemId);
+      }
+
       const { data, error } = await client
         .from('vault_items')
         .select('*')
@@ -72,6 +143,10 @@ export function createSupabaseRemoteAdapter(client: SupabaseClient): RemoteVault
     },
 
     async upsertItem(row: EncryptedVaultRow): Promise<EncryptedVaultRow> {
+      if (!(await isAuthenticatedAs(row.user_id))) {
+        return fallback.upsertItem(row);
+      }
+
       const { data, error } = await client
         .from('vault_items')
         .upsert(row, { onConflict: 'id' })
@@ -88,6 +163,10 @@ export function createSupabaseRemoteAdapter(client: SupabaseClient): RemoteVault
       userId: string,
       sinceIso: string | null
     ): Promise<EncryptedVaultRow[]> {
+      if (!(await isAuthenticatedAs(userId))) {
+        return fallback.pullItemsUpdatedSince(userId, sinceIso);
+      }
+
       let query = client
         .from('vault_items')
         .select('*')
@@ -103,6 +182,10 @@ export function createSupabaseRemoteAdapter(client: SupabaseClient): RemoteVault
         throw new Error(`Failed to pull vault delta: ${error.message}`);
       }
       return (data as EncryptedVaultRow[] | null) ?? [];
+    },
+
+    clearAll(): void {
+      fallback.clearAll?.();
     },
   };
 }
