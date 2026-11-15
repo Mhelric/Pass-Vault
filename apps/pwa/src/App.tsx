@@ -92,6 +92,25 @@ export function App() {
   const [sidebarWidth, setSidebarWidth] = useState(240);
   const [listWidth, setListWidth] = useState(360);
   const [resizingTarget, setResizingTarget] = useState<'sidebar' | 'list' | null>(null);
+  const [installPrompt, setInstallPrompt] = useState<
+    (Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }) | null
+  >(null);
+
+  useEffect(() => {
+    const onBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(
+        e as Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }
+      );
+    };
+    const onAppInstalled = () => setInstallPrompt(null);
+    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    window.addEventListener('appinstalled', onAppInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      window.removeEventListener('appinstalled', onAppInstalled);
+    };
+  }, []);
 
   useEffect(() => {
     if (!resizingTarget) return;
@@ -685,7 +704,7 @@ export function App() {
 
   // 3. Unlocked Mobile-First + Desktop 3-Pane Workspace
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex flex-col md:flex-row">
+    <div className="h-dvh overflow-hidden bg-[var(--bg-primary)] text-[var(--text-primary)] flex flex-col md:flex-row">
       {/* Desktop Left Sidebar (>= 768px) */}
       <aside
         style={{ ['--sidebar-w' as string]: `${sidebarCollapsed ? 64 : sidebarWidth}px` }}
@@ -872,9 +891,9 @@ export function App() {
       </div>
 
       {/* Main Content Area */}
-      <main className="vault-fade-in flex-1 flex flex-col min-w-0">
-        {/* Mobile Sticky Header (< 768px) */}
-        <header className="md:hidden sticky top-0 z-30 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--border-subtle)] px-4 pt-3 pb-2.5 space-y-2.5">
+      <main className="vault-fade-in flex-1 flex flex-col min-w-0 min-h-0">
+        {/* Mobile Header (< 768px) */}
+        <header className="md:hidden shrink-0 z-30 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--border-subtle)] px-4 pt-3 pb-2.5 space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center">
@@ -977,7 +996,7 @@ export function App() {
             />
           </div>
         ) : activeTab === 'settings' ? (
-          <div key="tab-settings" className="vault-fade-in p-4 md:p-8 flex-1 overflow-y-auto">
+          <div key="tab-settings" className="vault-fade-in p-4 pb-28 md:p-8 flex-1 overflow-y-auto">
             <SettingsView
               autoLockSeconds={prefs.autoLockSeconds}
               onChangeAutoLock={(sec) => {
@@ -985,6 +1004,16 @@ export function App() {
               }}
               aliasLabel={prefs.aliasLabel}
               isDemoMode={prefs.isDemoMode}
+              canInstallApp={Boolean(installPrompt)}
+              onInstallApp={async () => {
+                if (!installPrompt) return false;
+                await installPrompt.prompt();
+                const choice = await installPrompt.userChoice;
+                if (choice.outcome === 'accepted') {
+                  setInstallPrompt(null);
+                }
+                return choice.outcome === 'accepted';
+              }}
             />
           </div>
         ) : (
@@ -992,7 +1021,7 @@ export function App() {
             {/* Item List Column (Full-width mobile / resizable desktop) */}
             <section
               style={{ ['--list-w' as string]: `${listWidth}px` }}
-              className="w-full md:w-[var(--list-w)] shrink-0 flex flex-col"
+              className="w-full md:w-[var(--list-w)] shrink-0 flex flex-col min-h-0"
             >
               {/* Desktop Search Header */}
               <div className="hidden md:flex items-center gap-2 p-4 border-b border-[var(--border-subtle)]">
