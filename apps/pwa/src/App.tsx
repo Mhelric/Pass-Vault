@@ -226,22 +226,26 @@ export function App() {
 
     window.history.pushState({ passVaultGuard: true }, '');
 
-    if (lockState === 'unauthenticated' || !userId) {
-      if (authMode === 'create') {
-        setAuthMode('signin');
-        setAuthError(null);
-      }
-      return;
-    }
-
-    if (lockState !== 'unlocked') {
-      return;
-    }
-
     if (exitConfirmOpen) {
       setExitConfirmOpen(false);
       return;
     }
+
+    if (lockState === 'unauthenticated' || !userId) {
+      if (authMode === 'create') {
+        setAuthMode('signin');
+        setAuthError(null);
+        return;
+      }
+      setExitConfirmOpen(true);
+      return;
+    }
+
+    if (lockState !== 'unlocked') {
+      setExitConfirmOpen(true);
+      return;
+    }
+
     if (formOpen) {
       setFormOpen(false);
       setEditingItem(null);
@@ -272,14 +276,24 @@ export function App() {
 
   useEffect(() => {
     if (isBooting) return;
-    if (!(window.history.state as { passVaultGuard?: boolean } | null)?.passVaultGuard) {
-      window.history.pushState({ passVaultGuard: true }, '');
-    }
+    const ensureGuard = () => {
+      if (exitingRef.current) return;
+      if (!(window.history.state as { passVaultGuard?: boolean } | null)?.passVaultGuard) {
+        window.history.pushState({ passVaultGuard: true }, '');
+      }
+    };
+    ensureGuard();
     const onPopState = () => {
       backHandlerRef.current();
     };
     window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
+    window.addEventListener('pointerdown', ensureGuard, { passive: true });
+    window.addEventListener('keydown', ensureGuard, { passive: true });
+    return () => {
+      window.removeEventListener('popstate', onPopState);
+      window.removeEventListener('pointerdown', ensureGuard);
+      window.removeEventListener('keydown', ensureGuard);
+    };
   }, [isBooting]);
 
   // Background & idle Auto-Lock timer
@@ -509,6 +523,62 @@ export function App() {
     });
   };
 
+  const exitConfirmModal = exitConfirmOpen ? (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+      onClick={() => setExitConfirmOpen(false)}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="exit-vault-title"
+        className="vault-scale-in w-full max-w-sm rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-4 shadow-[0_16px_48px_rgba(0,0,0,0.7)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shrink-0">
+            <Lock className="w-5 h-5 text-[var(--accent-soft)]" />
+          </div>
+          <div>
+            <h2 id="exit-vault-title" className="text-sm font-bold text-[var(--text-primary)]">
+              Close Pass-Vault?
+            </h2>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">
+              {lockState === 'unlocked'
+                ? 'Your vault will lock and clear decrypted keys from memory.'
+                : 'Are you sure you want to close Pass-Vault?'}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2.5 pt-1">
+          <button
+            type="button"
+            onClick={() => setExitConfirmOpen(false)}
+            className="py-2.5 px-3 rounded-xl bg-[var(--bg-surface)] hover:bg-white/10 border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)]"
+          >
+            {lockState === 'unlocked' ? 'Stay in Vault' : 'Stay in App'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              exitingRef.current = true;
+              setExitConfirmOpen(false);
+              if (lockState === 'unlocked') {
+                lockVault();
+              }
+              window.close();
+              window.history.go(-2);
+            }}
+            className="py-2.5 px-3 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/35 text-xs font-semibold text-red-300"
+          >
+            {lockState === 'unlocked' ? 'Lock & Exit' : 'Close App'}
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   // 0. App Opening Boot Splash Transition
   if (isBooting) {
     return (
@@ -684,13 +754,19 @@ export function App() {
             </div>
           </form>
         </div>
+        {exitConfirmModal}
       </div>
     );
   }
 
   // 2. Lock Screen Overlay (PIN / Biometrics / Master Password)
   if (lockState !== 'unlocked') {
-    return <LockOverlay aliasLabel={prefs.aliasLabel} isDemoMode={prefs.isDemoMode} />;
+    return (
+      <>
+        <LockOverlay aliasLabel={prefs.aliasLabel} isDemoMode={prefs.isDemoMode} />
+        {exitConfirmModal}
+      </>
+    );
   }
 
   const categoryNav: Array<{ id: VaultFilter; label: string; icon: typeof Shield }> = [
@@ -1293,58 +1369,8 @@ export function App() {
         onCopySecret={triggerClipboardCountdown}
       />
 
-      {/* Exit App Confirmation Modal (when pressing Back on Vault root) */}
-      {exitConfirmOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
-          onClick={() => setExitConfirmOpen(false)}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="exit-vault-title"
-            className="vault-scale-in w-full max-w-sm rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-4 shadow-[0_16px_48px_rgba(0,0,0,0.7)]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shrink-0">
-                <Lock className="w-5 h-5 text-[var(--accent-soft)]" />
-              </div>
-              <div>
-                <h2 id="exit-vault-title" className="text-sm font-bold text-[var(--text-primary)]">
-                  Close Pass-Vault?
-                </h2>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                  Your vault will lock and clear decrypted keys from memory.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5 pt-1">
-              <button
-                type="button"
-                onClick={() => setExitConfirmOpen(false)}
-                className="py-2.5 px-3 rounded-xl bg-[var(--bg-surface)] hover:bg-white/10 border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)]"
-              >
-                Stay in Vault
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  exitingRef.current = true;
-                  setExitConfirmOpen(false);
-                  lockVault();
-                  window.close();
-                  window.history.go(-2);
-                }}
-                className="py-2.5 px-3 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/35 text-xs font-semibold text-red-300"
-              >
-                Lock &amp; Exit
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Exit App Confirmation Modal (when pressing Back on any root view) */}
+      {exitConfirmModal}
     </div>
   );
 }
