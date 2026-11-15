@@ -87,7 +87,7 @@ export function CommandPalette({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] shadow-2xl overflow-hidden"
+        className="w-full max-w-xl rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] focus-within:border-[var(--accent-primary)]/45 shadow-2xl overflow-hidden transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-[var(--border-subtle)]">
@@ -97,7 +97,7 @@ export function CommandPalette({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search vault… (Enter copies secret, Shift+Enter copies email/user)"
-            className="flex-1 bg-transparent text-sm text-[var(--text-primary)] focus:outline-none placeholder:text-[var(--text-muted)]"
+            className="flex-1 bg-transparent text-sm text-[var(--text-primary)] focus:outline-none focus:!shadow-none placeholder:text-[var(--text-muted)]"
           />
           <button
             type="button"
