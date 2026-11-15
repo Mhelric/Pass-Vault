@@ -1,18 +1,25 @@
-import type { DecryptedVaultItem } from '@vault/core';
+import {
+  exportEncryptedVaultBackup,
+  restoreEncryptedVaultBackup,
+  serializeVaultBackup,
+  type DecryptedVaultItem,
+} from '@vault/core';
 import { evaluateSecretStrength, isPlatformBiometricAvailable, randomBytes } from '@vault/crypto';
 import {
   AlertTriangle,
   CheckCircle2,
+  Download,
   Fingerprint,
+  HardDriveUpload,
   KeyRound,
   Lock,
   LogOut,
   ShieldCheck,
   Timer,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEMO_BIO_SECRET_STORAGE_KEY } from '../demoSeed.js';
-import { isSupabaseConfigured, useVault } from '../vaultRuntime.js';
+import { isSupabaseConfigured, pwaDb, useVault } from '../vaultRuntime.js';
 
 export interface SettingsViewProps {
   autoLockSeconds: number;
@@ -27,17 +34,26 @@ export function SettingsView({
   aliasLabel,
   isDemoMode,
 }: SettingsViewProps) {
+  const userId = useVault((s) => s.userId);
   const items = useVault((s) => s.items);
   const hasPinConfigured = useVault((s) => s.hasPinConfigured);
   const hasBiometricsConfigured = useVault((s) => s.hasBiometricsConfigured);
   const enableQuickPin = useVault((s) => s.enableQuickPin);
   const enableBiometricUnlock = useVault((s) => s.enableBiometricUnlock);
+  const unlockWithMasterPassword = useVault((s) => s.unlockWithMasterPassword);
   const lockVault = useVault((s) => s.lockVault);
   const signOut = useVault((s) => s.signOut);
 
   const [newPin, setNewPin] = useState('');
   const [pinMsg, setPinMsg] = useState<string | null>(null);
   const [bioHardwareSupported, setBioHardwareSupported] = useState(false);
+
+  const restoreInputRef = useRef<HTMLInputElement | null>(null);
+  const [pendingRestoreJson, setPendingRestoreJson] = useState<string | null>(null);
+  const [restoreMasterPassword, setRestoreMasterPassword] = useState('');
+  const [backupMsg, setBackupMsg] = useState<string | null>(null);
+  const [backupError, setBackupError] = useState<string | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
 
   useEffect(() => {
     void isPlatformBiometricAvailable().then(setBioHardwareSupported);
@@ -91,6 +107,59 @@ export function SettingsView({
     );
     secret.fill(0);
     setPinMsg('Biometric unlock configured on this device.');
+  };
+
+  const handleExportBackup = async () => {
+    if (!userId) return;
+    setBackupError(null);
+    setBackupMsg(null);
+    try {
+      const backup = await exportEncryptedVaultBackup(pwaDb, userId);
+      const serialized = serializeVaultBackup(backup);
+      const blob = new Blob([serialized], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `obsidian-vault-backup-${dateStr}.vault`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setBackupMsg(`Exported ${backup.items.length} encrypted items to .vault backup.`);
+    } catch (err) {
+      setBackupError(err instanceof Error ? err.message : 'Failed to export backup');
+    }
+  };
+
+  const handleSelectRestoreFile = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    setBackupError(null);
+    setBackupMsg(null);
+    setPendingRestoreJson(await file.text());
+  };
+
+  const handleConfirmRestore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId || !pendingRestoreJson || !restoreMasterPassword) return;
+    setBackupError(null);
+    setBackupMsg(null);
+    setIsRestoring(true);
+    try {
+      const result = await restoreEncryptedVaultBackup({
+        backupJson: pendingRestoreJson,
+        masterPassword: restoreMasterPassword,
+        db: pwaDb,
+        targetUserId: userId,
+      });
+      await unlockWithMasterPassword(userId, restoreMasterPassword);
+      setPendingRestoreJson(null);
+      setRestoreMasterPassword('');
+      setBackupMsg(`Restored ${result.restoredCount} encrypted item(s) from backup.`);
+    } catch (err) {
+      setBackupError(err instanceof Error ? err.message : 'Backup decryption failed');
+    } finally {
+      setIsRestoring(false);
+    }
   };
 
   return (
@@ -218,6 +287,73 @@ export function SettingsView({
             ))}
           </div>
         )}
+      </div>
+
+      {/* Encrypted Offline Backup (.vault) */}
+      <div className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <div className="text-sm font-semibold text-[var(--text-primary)]">
+              Encrypted Offline Backup (.vault)
+            </div>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">
+              Standalone zero-knowledge backup file decryptable offline with your Master Password.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <button
+            type="button"
+            onClick={() => void handleExportBackup()}
+            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-xs font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.3)]"
+          >
+            <Download className="w-4 h-4" />
+            Export .vault Backup
+          </button>
+
+          <button
+            type="button"
+            onClick={() => restoreInputRef.current?.click()}
+            className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-[var(--bg-surface)] hover:bg-white/10 border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)]"
+          >
+            <HardDriveUpload className="w-4 h-4 text-[var(--accent-soft)]" />
+            Restore .vault File
+          </button>
+          <input
+            ref={restoreInputRef}
+            type="file"
+            accept=".vault,.json"
+            onChange={(e) => {
+              void handleSelectRestoreFile(e.target.files);
+              e.target.value = '';
+            }}
+            className="hidden"
+          />
+        </div>
+
+        {pendingRestoreJson && (
+          <form onSubmit={(e) => void handleConfirmRestore(e)} className="flex gap-2 pt-1">
+            <input
+              type="password"
+              required
+              value={restoreMasterPassword}
+              onChange={(e) => setRestoreMasterPassword(e.target.value)}
+              placeholder="Backup Master Password"
+              className="flex-1 font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3 py-2 text-xs text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+            />
+            <button
+              type="submit"
+              disabled={isRestoring}
+              className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white disabled:opacity-50"
+            >
+              {isRestoring ? 'Restoring…' : 'Decrypt & Restore'}
+            </button>
+          </form>
+        )}
+
+        {backupMsg && <p className="text-xs text-emerald-300">{backupMsg}</p>}
+        {backupError && <p className="text-xs text-[var(--status-danger)]">{backupError}</p>}
       </div>
 
       {/* Session Actions */}
