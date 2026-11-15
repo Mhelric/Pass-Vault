@@ -49,13 +49,12 @@ function normalizeSingleKeepNote(
     .map((l) => l.name?.trim())
     .filter((name): name is string => Boolean(name));
 
-  const fullText = noteTitle ? `[${noteTitle}]\n${combinedText}` : combinedText;
-  const blocks = splitRawTextIntoBlocks(fullText, sourceName);
+  const blocks = splitRawTextIntoBlocks(combinedText, sourceName);
 
-  return blocks.map((block, index) => {
+  return blocks.map((block) => {
     const enrichedBlock =
-      noteTitle && !block.titleHint
-        ? { ...block, titleHint: blocks.length > 1 ? `${noteTitle} (${index + 1})` : noteTitle }
+      noteTitle && blocks.length === 1 && !block.titleHint
+        ? { ...block, titleHint: noteTitle }
         : block;
     const candidate = classifyBlock(enrichedBlock);
     if (labels.length > 0) {

@@ -73,8 +73,11 @@ export function splitRawTextIntoBlocks(
       .map((l) => l.trim())
       .filter(Boolean);
 
-    if (isCompactSingleLineList(nonEmptyLines)) {
-      for (const line of nonEmptyLines) {
+    const firstLineHint = nonEmptyLines[0] ? cleanTitleHint(nonEmptyLines[0]) : undefined;
+    const bodyLines = firstLineHint ? nonEmptyLines.slice(1) : nonEmptyLines;
+
+    if (isCompactSingleLineList(bodyLines)) {
+      for (const line of bodyLines) {
         blocks.push({
           blockId: globalThis.crypto.randomUUID(),
           sourceName,
@@ -84,7 +87,6 @@ export function splitRawTextIntoBlocks(
       continue;
     }
 
-    const firstLineHint = nonEmptyLines[0] ? cleanTitleHint(nonEmptyLines[0]) : undefined;
     blocks.push({
       blockId: globalThis.crypto.randomUUID(),
       sourceName,

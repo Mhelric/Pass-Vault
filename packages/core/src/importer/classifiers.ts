@@ -70,8 +70,12 @@ function inferTitle(block: RawTextBlock, fallback: string): string {
   if (lines.length === 0) return fallback;
 
   const first = lines[0]!;
-  // Strip bracket/markdown prefixes
-  const cleanedHeader = first.replace(/^#+\s*/, '').replace(/^\[(.*)\]$/, '$1').trim();
+  // Strip bracket/markdown/checklist prefixes
+  const cleanedHeader = first
+    .replace(/^\[[ xX]\]\s+/, '')
+    .replace(/^#+\s*/, '')
+    .replace(/^\[(.*)\]$/, '$1')
+    .trim();
 
   // If first line is "Service: email / pass" or "BDO ATM PIN: 0482", extract prefix before delimiter
   const colonIdx = cleanedHeader.indexOf(':');
@@ -294,7 +298,7 @@ function buildFallbackNote(block: RawTextBlock, now: string): ParsedImportCandid
 
   if (mentionsRecovery) {
     for (const line of lines) {
-      const cleaned = line.replace(/^[-*•\d.)\s]+/, '').trim();
+      const cleaned = line.replace(/^(?:[-*•]|\d+[.)])\s+/, '').trim();
       if (/^[a-z0-9]{4}(?:[\s-][a-z0-9]{4}){1,3}$/i.test(cleaned)) {
         codeMatches.push({ code: cleaned, used: false });
       }
