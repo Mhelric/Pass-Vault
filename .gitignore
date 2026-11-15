@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build & bundle artifacts
+dist/
+build/
+.turbo/
+.wxt/
+.output/
+coverage/
+*.tsbuildinfo
+
+# Environment & local secrets
+.env
+.env.local
+.env.*.local
+
+# OS & editor files
+.DS_Store
+Thumbs.db
+.vscode/
+!.vscode/extensions.json
