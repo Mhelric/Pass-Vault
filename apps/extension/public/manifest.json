@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Obsidian Vault — Zero-Knowledge Autofill",
+  "name": "Pass-Vault — Zero-Knowledge Autofill",
   "version": "0.1.0",
   "description": "Zero-knowledge companion browser extension for one-click autofill and PIN/password access.",
   "permissions": [
@@ -11,7 +11,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Obsidian Vault"
+    "default_title": "Pass-Vault"
   },
   "background": {
     "service_worker": "background.js",

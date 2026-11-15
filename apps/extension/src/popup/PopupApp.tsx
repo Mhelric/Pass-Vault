@@ -18,7 +18,6 @@ import {
   RefreshCw,
   Search,
   Shield,
-  Sparkles,
   Wand2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -35,7 +34,6 @@ const extRemote = extClient
   : createInMemoryRemoteAdapter();
 
 const extVaultStore = createVaultStore({ db: extDb, remote: extRemote });
-const DEMO_EXT_USER_ID = '00000000-0000-4000-8000-000000000002';
 
 export function PopupApp() {
   const userId = useStore(extVaultStore, (s) => s.userId);
@@ -92,77 +90,6 @@ export function PopupApp() {
       return item.title.toLowerCase().includes(q);
     });
   }, [items, matchedLogins, search]);
-
-  const handleLaunchExtensionDemo = async () => {
-    setBusy(true);
-    try {
-      await extDb.transaction(
-        'rw',
-        extDb.profiles,
-        extDb.items,
-        extDb.syncQueue,
-        extDb.deviceKeys,
-        async () => {
-          await extDb.profiles.clear();
-          await extDb.items.clear();
-          await extDb.syncQueue.clear();
-          await extDb.deviceKeys.clear();
-        }
-      );
-
-      await initializeNewVault(DEMO_EXT_USER_ID, 'ObsidianExt!Demo#2026', 'argon2id');
-      await enableQuickPin('123456');
-
-      const now = new Date().toISOString();
-      const seedItems: DecryptedVaultItem[] = [
-        {
-          id: globalThis.crypto.randomUUID(),
-          category: 'login',
-          title: 'GitHub',
-          isFavorite: true,
-          tags: ['dev'],
-          email: 'mhelricbanaag102703@gmail.com',
-          username: 'Mhelric',
-          password: 'harbor-cobalt-galaxy-ember7',
-          urls: ['https://github.com'],
-          passwordHistory: [],
-          createdAt: now,
-          updatedAt: now,
-        },
-        {
-          id: globalThis.crypto.randomUUID(),
-          category: 'login',
-          title: 'Google Main',
-          isFavorite: true,
-          tags: ['email'],
-          email: 'yourname+vault@gmail.com',
-          password: 'K9#mP2$vL8!qR4xW7zN3',
-          urls: ['https://accounts.google.com'],
-          passwordHistory: [],
-          createdAt: now,
-          updatedAt: now,
-        },
-        {
-          id: globalThis.crypto.randomUUID(),
-          category: 'pin',
-          title: 'BDO ATM Card PIN',
-          isFavorite: true,
-          tags: ['bank'],
-          pinCode: '0482',
-          pinType: 'bank_atm',
-          associatedAccount: 'BDO Kabayan',
-          createdAt: now,
-          updatedAt: now,
-        },
-      ];
-
-      for (const item of seedItems) {
-        await saveItem(item);
-      }
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const handleAutofill = async (login: LoginItem) => {
     const chromeApi = getChromeApi();
@@ -249,7 +176,7 @@ export function PopupApp() {
           <div className="w-10 h-10 mx-auto rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center">
             <Shield className="w-5 h-5 text-[var(--accent-soft)]" />
           </div>
-          <h1 className="text-sm font-bold text-[var(--text-primary)]">Obsidian Vault</h1>
+          <h1 className="text-sm font-bold text-[var(--text-primary)]">Pass-Vault</h1>
           <p className="text-[11px] text-[var(--text-muted)]">
             Zero-knowledge cloud sync & autofill
           </p>
@@ -295,22 +222,6 @@ export function PopupApp() {
             </button>
           </form>
         )}
-
-        <div className="space-y-1.5">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void handleLaunchExtensionDemo()}
-            className="w-full py-2.5 rounded-xl bg-[var(--bg-surface)] hover:bg-white/10 border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)] flex items-center justify-center gap-2 disabled:opacity-60"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[var(--accent-soft)]" />
-            <span>{busy ? 'Initializing…' : 'Launch Demo Extension Vault'}</span>
-          </button>
-
-          <p className="text-[10px] text-center text-[var(--text-muted)]">
-            Demo Quick PIN: <span className="font-mono-secret text-[var(--accent-soft)]">123456</span>
-          </p>
-        </div>
       </div>
     );
   }
@@ -320,7 +231,7 @@ export function PopupApp() {
       <div className="h-full w-full bg-[var(--bg-primary)] p-4 flex flex-col justify-center">
         <div className="text-center mb-4">
           <h2 className="text-sm font-bold text-[var(--text-primary)]">Extension Locked</h2>
-          <p className="text-[11px] text-[var(--text-muted)]">Demo PIN: 123456</p>
+          <p className="text-[11px] text-[var(--text-muted)]">Enter your 6-digit Quick PIN</p>
         </div>
         {hasPinConfigured ? (
           <PinKeypad
@@ -344,7 +255,7 @@ export function PopupApp() {
       <header className="px-3.5 py-2.5 bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)] flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <Shield className="w-4 h-4 text-[var(--accent-soft)] shrink-0" />
-          <span className="text-xs font-bold truncate">Obsidian Vault</span>
+          <span className="text-xs font-bold truncate">Pass-Vault</span>
         </div>
 
         <div className="flex items-center gap-1">

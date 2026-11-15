@@ -2,7 +2,7 @@ import { MAX_PIN_ATTEMPTS } from '@vault/core';
 import { PinKeypad } from '@vault/ui';
 import { KeyRound, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
-import { DEMO_BIO_SECRET_STORAGE_KEY, DEMO_MASTER_PASSWORD, DEMO_QUICK_PIN } from '../demoSeed.js';
+import { DEMO_BIO_SECRET_STORAGE_KEY } from '../demoSeed.js';
 import { saveUiPreferences, useVault } from '../vaultRuntime.js';
 
 export interface LockOverlayProps {
@@ -10,7 +10,7 @@ export interface LockOverlayProps {
   isDemoMode: boolean;
 }
 
-export function LockOverlay({ aliasLabel, isDemoMode }: LockOverlayProps) {
+export function LockOverlay({ aliasLabel }: LockOverlayProps) {
   const userId = useVault((s) => s.userId);
   const lockState = useVault((s) => s.lockState);
   const failedPinAttempts = useVault((s) => s.failedPinAttempts);
@@ -103,19 +103,6 @@ export function LockOverlay({ aliasLabel, isDemoMode }: LockOverlayProps) {
         <p className="text-xs text-[var(--text-muted)] mt-1">
           {aliasLabel ?? 'Personal Zero-Knowledge Vault'}
         </p>
-
-        {isDemoMode && (
-          <div className="mt-3 px-3 py-1.5 rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-[11px] text-[var(--accent-soft)]">
-            Demo PIN: <span className="font-mono-secret font-semibold">{DEMO_QUICK_PIN}</span>
-            {showMasterForm && (
-              <>
-                {' '}
-                • Master:{' '}
-                <span className="font-mono-secret font-semibold">{DEMO_MASTER_PASSWORD}</span>
-              </>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Bottom 65%: Thumb-zone PIN Pad or Master Password Gate */}
@@ -199,7 +186,7 @@ export function LockOverlay({ aliasLabel, isDemoMode }: LockOverlayProps) {
           }}
           className="text-xs text-[var(--text-muted)] hover:text-red-300 transition-colors"
         >
-          Switch Account / Reset Demo
+          Switch Account / Sign Out
         </button>
       </div>
     </div>

@@ -32,7 +32,6 @@ export function SettingsView({
   autoLockSeconds,
   onChangeAutoLock,
   aliasLabel,
-  isDemoMode,
 }: SettingsViewProps) {
   const userId = useVault((s) => s.userId);
   const items = useVault((s) => s.items);
@@ -121,7 +120,7 @@ export function SettingsView({
       const dateStr = new Date().toISOString().slice(0, 10);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `obsidian-vault-backup-${dateStr}.vault`;
+      a.download = `pass-vault-backup-${dateStr}.vault`;
       a.click();
       URL.revokeObjectURL(url);
       setBackupMsg(`Exported ${backup.items.length} encrypted items to .vault backup.`);
@@ -168,7 +167,7 @@ export function SettingsView({
         <h1 className="text-xl font-bold text-[var(--text-primary)]">Security & Settings</h1>
         <p className="text-xs text-[var(--text-muted)] mt-1">
           {aliasLabel ?? 'Personal Zero-Knowledge Vault'} •{' '}
-          {isSupabaseConfigured ? 'Supabase Cloud Sync Active' : isDemoMode ? 'Local Encrypted Demo Mode' : 'Local IndexedDB Mode'}
+          {isSupabaseConfigured ? 'Supabase Cloud Sync Active' : 'Local IndexedDB Mode'}
         </p>
       </div>
 

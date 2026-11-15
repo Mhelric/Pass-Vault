@@ -17,7 +17,6 @@ import {
   Search,
   Settings,
   Shield,
-  Sparkles,
   Star,
   Wand2,
   X,
@@ -30,7 +29,6 @@ import { ItemFormModal } from './components/ItemFormModal.js';
 import { ItemInspector } from './components/ItemInspector.js';
 import { LockOverlay } from './components/LockOverlay.js';
 import { SettingsView } from './components/SettingsView.js';
-import { launchInteractiveDemoVault } from './demoSeed.js';
 import {
   getItemSubtitle,
   getPrimarySecret,
@@ -201,19 +199,6 @@ export function App() {
     [items, selectedId, filteredItems]
   );
 
-  const handleLaunchDemo = async () => {
-    setAuthBusy(true);
-    setAuthError(null);
-    try {
-      await launchInteractiveDemoVault();
-      setPrefs(loadUiPreferences());
-    } catch (err) {
-      setAuthError(err instanceof Error ? err.message : 'Failed to initialize demo vault');
-    } finally {
-      setAuthBusy(false);
-    }
-  };
-
   const handleCreateCustomVault = async (e: React.FormEvent) => {
     e.preventDefault();
     if (masterInput.length < 8) {
@@ -318,34 +303,14 @@ export function App() {
               <Shield className="w-8 h-8 text-[var(--accent-soft)]" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
-              Obsidian Vault
+              Pass-Vault
             </h1>
             <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
               Zero-knowledge encrypted vault for passwords, PINs, cards, and recovery notes.
             </p>
           </div>
 
-          {/* 1-Click Demo CTA for immediate preview */}
-          <div className="rounded-2xl bg-gradient-to-br from-violet-600/20 via-[var(--bg-elevated)] to-[var(--bg-elevated)] border border-[var(--accent-primary)]/40 p-5 space-y-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-white">
-              <Sparkles className="w-4 h-4 text-[var(--accent-soft)]" />
-              <span>Preview Live Interactive Vault</span>
-            </div>
-            <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-              Spins up a real client-side Argon2id + AES-256-GCM vault in IndexedDB with sample Logins, BDO/GCash PINs, Visa Card, and 2FA Backup Codes. Quick PIN is{' '}
-              <span className="font-mono-secret text-[var(--accent-soft)] font-semibold">123456</span>.
-            </p>
-            <button
-              type="button"
-              disabled={authBusy}
-              onClick={() => void handleLaunchDemo()}
-              className="w-full py-3 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-sm font-semibold text-white shadow-[0_0_24px_rgba(139,92,246,0.4)] transition-all disabled:opacity-60"
-            >
-              {authBusy ? 'Deriving Argon2id Vault Keys…' : 'Launch Interactive Demo Vault'}
-            </button>
-          </div>
-
-          {/* Or create a blank personal vault */}
+          {/* Sign in or create an encrypted personal vault */}
           <form
             onSubmit={(e) => void handleCreateCustomVault(e)}
             className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-3.5"
@@ -402,7 +367,7 @@ export function App() {
             <button
               type="submit"
               disabled={authBusy}
-              className="w-full py-2.5 rounded-xl bg-[var(--bg-surface)] hover:bg-white/10 border border-[var(--border-subtle)] text-sm font-semibold text-[var(--text-primary)] transition-colors disabled:opacity-60"
+              className="w-full py-3 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-sm font-semibold text-white shadow-[0_0_24px_rgba(139,92,246,0.4)] transition-all disabled:opacity-60"
             >
               {authBusy ? 'Authenticating & Deriving Argon2id Keys…' : 'Sign In / Create Encrypted Vault'}
             </button>
@@ -437,7 +402,7 @@ export function App() {
               <div className="w-8 h-8 rounded-xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center">
                 <Shield className="w-4 h-4 text-[var(--accent-soft)]" />
               </div>
-              <span className="font-bold tracking-tight text-sm">Obsidian Vault</span>
+              <span className="font-bold tracking-tight text-sm">Pass-Vault</span>
             </div>
             <button
               type="button"

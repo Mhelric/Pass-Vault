@@ -1,6 +1,6 @@
 {
-  "name": "Obsidian Vault",
-  "short_name": "Vault",
+  "name": "Pass-Vault",
+  "short_name": "Pass-Vault",
   "description": "Zero-knowledge encrypted password, PIN, and recovery vault",
   "start_url": "/",
   "display": "standalone",
