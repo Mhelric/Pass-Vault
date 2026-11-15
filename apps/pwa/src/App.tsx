@@ -84,6 +84,25 @@ export function App() {
   const [authStepLabel, setAuthStepLabel] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isBooting, setIsBooting] = useState(true);
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
+  const navHistoryRef = useRef<Array<{ tab: ActiveTab; filter: VaultFilter }>>([]);
+  const exitingRef = useRef(false);
+
+  const navigateTab = useCallback(
+    (nextTab: ActiveTab, nextFilter?: VaultFilter) => {
+      const targetFilter = nextFilter ?? (nextTab === 'vault' ? filter : 'all');
+      if (nextTab === activeTab && targetFilter === filter) return;
+      navHistoryRef.current = [
+        ...navHistoryRef.current.slice(-19),
+        { tab: activeTab, filter },
+      ];
+      setActiveTab(nextTab);
+      if (nextFilter !== undefined) {
+        setFilter(nextFilter);
+      }
+    },
+    [activeTab, filter]
+  );
 
   // 30-second Clipboard Auto-Clear countdown
   const [clipboardTimer, setClipboardTimer] = useState<{ label: string; secondsLeft: number } | null>(
@@ -138,6 +157,70 @@ export function App() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [lockState]);
+
+  // Intercept browser/mobile Back button so it steps back in-app or returns to Vault,
+  // and prompts for confirmation before exiting from the Vault root.
+  const backHandlerRef = useRef<() => void>(() => {});
+  backHandlerRef.current = () => {
+    if (exitingRef.current) return;
+
+    window.history.pushState({ passVaultGuard: true }, '');
+
+    if (lockState === 'unauthenticated' || !userId) {
+      if (authMode === 'create') {
+        setAuthMode('signin');
+        setAuthError(null);
+      }
+      return;
+    }
+
+    if (lockState !== 'unlocked') {
+      return;
+    }
+
+    if (exitConfirmOpen) {
+      setExitConfirmOpen(false);
+      return;
+    }
+    if (formOpen) {
+      setFormOpen(false);
+      setEditingItem(null);
+      setPrefillSecret(undefined);
+      return;
+    }
+    if (paletteOpen) {
+      setPaletteOpen(false);
+      return;
+    }
+    if (mobileSheetOpen) {
+      setMobileSheetOpen(false);
+      return;
+    }
+    const previous = navHistoryRef.current.pop();
+    if (previous) {
+      setActiveTab(previous.tab);
+      setFilter(previous.filter);
+      return;
+    }
+    if (activeTab !== 'vault' || filter !== 'all') {
+      setActiveTab('vault');
+      setFilter('all');
+      return;
+    }
+    setExitConfirmOpen(true);
+  };
+
+  useEffect(() => {
+    if (isBooting) return;
+    if (!(window.history.state as { passVaultGuard?: boolean } | null)?.passVaultGuard) {
+      window.history.pushState({ passVaultGuard: true }, '');
+    }
+    const onPopState = () => {
+      backHandlerRef.current();
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [isBooting]);
 
   // Background & idle Auto-Lock timer
   const idleTimerRef = useRef<number | null>(null);
@@ -561,9 +644,9 @@ export function App() {
 
   // 3. Unlocked Mobile-First + Desktop 3-Pane Workspace
   return (
-    <div className="vault-fade-in min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex flex-col md:flex-row">
       {/* Desktop Left Sidebar (>= 768px) */}
-      <aside className="hidden md:flex md:w-60 shrink-0 flex-col justify-between bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] p-4">
+      <aside className="vault-fade-in hidden md:flex md:w-60 shrink-0 flex-col justify-between bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] p-4">
         <div className="space-y-6">
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-2.5">
@@ -608,10 +691,7 @@ export function App() {
                 <button
                   key={nav.id}
                   type="button"
-                  onClick={() => {
-                    setActiveTab('vault');
-                    setFilter(nav.id);
-                  }}
+                  onClick={() => navigateTab('vault', nav.id)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                     isActive
                       ? 'bg-[var(--accent-tint)] text-white border border-[var(--accent-primary)]/35'
@@ -635,7 +715,7 @@ export function App() {
             </div>
             <button
               type="button"
-              onClick={() => setActiveTab('generator')}
+              onClick={() => navigateTab('generator')}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                 activeTab === 'generator'
                   ? 'bg-[var(--accent-tint)] text-white border border-[var(--accent-primary)]/35'
@@ -647,7 +727,7 @@ export function App() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('import')}
+              onClick={() => navigateTab('import')}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                 activeTab === 'import'
                   ? 'bg-[var(--accent-tint)] text-white border border-[var(--accent-primary)]/35'
@@ -659,7 +739,7 @@ export function App() {
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('settings')}
+              onClick={() => navigateTab('settings')}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                 activeTab === 'settings'
                   ? 'bg-[var(--accent-tint)] text-white border border-[var(--accent-primary)]/35'
@@ -688,7 +768,7 @@ export function App() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="vault-fade-in flex-1 flex flex-col min-w-0">
         {/* Mobile Sticky Header (< 768px) */}
         <header className="md:hidden sticky top-0 z-30 bg-[var(--bg-primary)]/95 backdrop-blur border-b border-[var(--border-subtle)] px-4 pt-3 pb-2.5 space-y-2.5">
           <div className="flex items-center justify-between">
@@ -748,7 +828,7 @@ export function App() {
                     <button
                       key={pill.id}
                       type="button"
-                      onClick={() => setFilter(pill.id)}
+                      onClick={() => navigateTab('vault', pill.id)}
                       className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                         filter === pill.id
                           ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
@@ -766,7 +846,7 @@ export function App() {
 
         {/* Body Content */}
         {activeTab === 'generator' ? (
-          <div key="tab-generator" className="vault-fade-in p-4 md:p-8 flex-1 overflow-y-auto">
+          <div key="tab-generator" className="vault-fade-in p-4 pb-28 md:p-8 flex-1 overflow-y-auto">
             <GeneratorView
               onCopySecret={triggerClipboardCountdown}
               onUseInNewItem={(secret, category) => {
@@ -778,7 +858,7 @@ export function App() {
             />
           </div>
         ) : activeTab === 'import' ? (
-          <div key="tab-import" className="vault-fade-in p-4 md:p-8 flex-1 overflow-y-auto">
+          <div key="tab-import" className="vault-fade-in p-4 pb-28 md:p-8 flex-1 overflow-y-auto">
             <ImportView
               onImportItems={async (importedItems) => {
                 for (const item of importedItems) {
@@ -968,14 +1048,17 @@ export function App() {
             setFormOpen(true);
           }}
           aria-label="Add new vault item"
-          className="md:hidden fixed right-5 bottom-20 z-30 w-14 h-14 rounded-2xl bg-[var(--accent-primary)] text-white flex items-center justify-center shadow-[0_6px_28px_rgba(139,92,246,0.5)] active:scale-95 transition-transform"
+          className="md:hidden fixed right-5 bottom-[calc(5.25rem+env(safe-area-inset-bottom))] z-30 w-14 h-14 rounded-2xl bg-[var(--accent-primary)] text-white flex items-center justify-center shadow-[0_6px_28px_rgba(139,92,246,0.5)] active:scale-95 transition-transform"
         >
           <Plus className="w-6 h-6" />
         </button>
       )}
 
-      {/* Mobile Fixed Bottom Navigation Bar */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-[var(--bg-elevated)]/95 backdrop-blur border-t border-[var(--border-subtle)] grid grid-cols-5 px-1 py-1.5">
+      {/* Mobile Fixed Glassmorphism Bottom Navigation Bar */}
+      <nav
+        aria-label="Mobile navigation"
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#121217]/75 backdrop-blur-xl border-t border-white/10 shadow-[0_-10px_35px_rgba(0,0,0,0.5)] grid grid-cols-5 gap-1 px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+      >
         {[
           { id: 'vault' as const, label: 'Vault', icon: Shield },
           { id: 'pins' as const, label: 'PINs', icon: Hash },
@@ -989,12 +1072,14 @@ export function App() {
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center gap-1 py-1.5 rounded-xl text-[11px] font-medium transition-colors ${
-                active ? 'text-[var(--accent-soft)]' : 'text-[var(--text-muted)]'
+              onClick={() => navigateTab(tab.id)}
+              className={`flex flex-col items-center justify-center gap-1 py-1.5 rounded-2xl text-[11px] font-medium transition-all duration-200 ${
+                active
+                  ? 'bg-[var(--accent-tint)] text-[var(--accent-soft)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
               }`}
             >
-              <Icon className="w-5 h-5" />
+              <Icon className={`w-5 h-5 transition-transform duration-200 ${active ? 'scale-105' : ''}`} />
               <span>{tab.label}</span>
             </button>
           );
@@ -1003,7 +1088,7 @@ export function App() {
 
       {/* 30-Second Clipboard Auto-Clear Countdown Toast */}
       {clipboardTimer && (
-        <div className="vault-slide-up fixed bottom-20 md:bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-full bg-[var(--bg-elevated)] border border-[var(--accent-primary)]/50 shadow-[0_8px_32px_rgba(0,0,0,0.65)] text-xs whitespace-nowrap">
+        <div className="vault-slide-up fixed bottom-[calc(5.25rem+env(safe-area-inset-bottom))] md:bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-full bg-[var(--bg-elevated)]/90 backdrop-blur-xl border border-[var(--accent-primary)]/50 shadow-[0_8px_32px_rgba(0,0,0,0.65)] text-xs whitespace-nowrap">
           <span className="text-[var(--text-primary)] font-medium">
             {clipboardTimer.label} copied
           </span>
@@ -1049,6 +1134,59 @@ export function App() {
         onSelectItem={(item) => setSelectedId(item.id)}
         onCopySecret={triggerClipboardCountdown}
       />
+
+      {/* Exit App Confirmation Modal (when pressing Back on Vault root) */}
+      {exitConfirmOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+          onClick={() => setExitConfirmOpen(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="exit-vault-title"
+            className="vault-scale-in w-full max-w-sm rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-4 shadow-[0_16px_48px_rgba(0,0,0,0.7)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shrink-0">
+                <Lock className="w-5 h-5 text-[var(--accent-soft)]" />
+              </div>
+              <div>
+                <h2 id="exit-vault-title" className="text-sm font-bold text-[var(--text-primary)]">
+                  Close Pass-Vault?
+                </h2>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  Your vault will lock and clear decrypted keys from memory.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setExitConfirmOpen(false)}
+                className="py-2.5 px-3 rounded-xl bg-[var(--bg-surface)] hover:bg-white/10 border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)]"
+              >
+                Stay in Vault
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  exitingRef.current = true;
+                  setExitConfirmOpen(false);
+                  lockVault();
+                  window.close();
+                  window.history.go(-2);
+                }}
+                className="py-2.5 px-3 rounded-xl bg-red-500/15 hover:bg-red-500/25 border border-red-500/35 text-xs font-semibold text-red-300"
+              >
+                Lock &amp; Exit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
