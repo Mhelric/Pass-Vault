@@ -31,6 +31,10 @@
 
   --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* Motion Timing */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html,
@@ -40,6 +44,130 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input,
+select,
+textarea,
+[role='button'] {
+  transition-property:
+    color,
+    background-color,
+    border-color,
+    box-shadow,
+    opacity,
+    transform;
+  transition-duration: 220ms;
+  transition-timing-function: var(--ease-smooth);
+}
+
+button:not(:disabled):active {
+  transform: scale(0.985);
+}
+
+@keyframes vaultFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes vaultScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes vaultSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vaultShieldPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 28px rgba(139, 92, 246, 0.25);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 0 44px rgba(139, 92, 246, 0.5);
+  }
+}
+
+@keyframes vaultShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+.vault-fade-in {
+  animation: vaultFadeIn 320ms var(--ease-spring) both;
+}
+
+.vault-scale-in {
+  animation: vaultScaleIn 260ms var(--ease-spring) both;
+}
+
+.vault-slide-up {
+  animation: vaultSlideUp 300ms var(--ease-spring) both;
+}
+
+.vault-shield-pulse {
+  animation: vaultShieldPulse 2.4s ease-in-out infinite;
+}
+
+.vault-shimmer-bar {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--bg-surface);
+}
+
+.vault-shimmer-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 38%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, var(--accent-primary), var(--accent-soft), transparent);
+  animation: vaultShimmer 1.35s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vault-fade-in,
+  .vault-scale-in,
+  .vault-slide-up,
+  .vault-shield-pulse,
+  .vault-shimmer-bar::after {
+    animation: none !important;
+  }
+
+  button,
+  input,
+  select,
+  textarea,
+  [role='button'] {
+    transition-duration: 0ms !important;
+  }
 }
 
 .font-mono-secret {

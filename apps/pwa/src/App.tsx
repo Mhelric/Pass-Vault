@@ -86,24 +86,49 @@ export function App() {
   const [showConfirmMaster, setShowConfirmMaster] = useState(false);
   const [showPin, setShowPin] = useState(false);
   const [authBusy, setAuthBusy] = useState(false);
+  const [authStepLabel, setAuthStepLabel] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isBooting, setIsBooting] = useState(true);
 
   // 30-second Clipboard Auto-Clear countdown
   const [clipboardTimer, setClipboardTimer] = useState<{ label: string; secondsLeft: number } | null>(
     null
   );
 
-  // Restore last local session on mount if IndexedDB profile exists
+  // Smooth opening transition + restore last local session on mount if IndexedDB profile exists
   useEffect(() => {
+    let cancelled = false;
+    let timerId: number | null = null;
+    const startedAt = Date.now();
     const savedPrefs = loadUiPreferences();
-    if (savedPrefs.lastUserId && lockState === 'unauthenticated') {
-      void pwaDb.profiles.get(savedPrefs.lastUserId).then((profile) => {
-        if (profile) {
-          void hydrateSession(savedPrefs.lastUserId!);
-        }
-      });
+
+    const finishBoot = () => {
+      if (cancelled) return;
+      const elapsed = Date.now() - startedAt;
+      const remaining = Math.max(0, 320 - elapsed);
+      timerId = window.setTimeout(() => {
+        if (!cancelled) setIsBooting(false);
+      }, remaining);
+    };
+
+    if (savedPrefs.lastUserId && vaultStore.getState().lockState === 'unauthenticated') {
+      void pwaDb.profiles
+        .get(savedPrefs.lastUserId)
+        .then(async (profile) => {
+          if (!cancelled && profile) {
+            await hydrateSession(savedPrefs.lastUserId!);
+          }
+        })
+        .finally(finishBoot);
+    } else {
+      finishBoot();
     }
-  }, [hydrateSession, lockState]);
+
+    return () => {
+      cancelled = true;
+      if (timerId !== null) window.clearTimeout(timerId);
+    };
+  }, [hydrateSession]);
 
   // Global Cmd/Ctrl + K Command Palette shortcut
   useEffect(() => {
@@ -232,6 +257,11 @@ export function App() {
 
     setAuthBusy(true);
     setAuthError(null);
+    setAuthStepLabel(
+      authMode === 'signin'
+        ? 'Authenticating with Cloud Vault…'
+        : 'Registering Encrypted Cloud Vault…'
+    );
     try {
       let resolvedUserId: string;
       let resolvedLabel: string;
@@ -245,6 +275,12 @@ export function App() {
         );
         resolvedUserId = cloudAuth.userId;
         resolvedLabel = cloudAuth.email;
+
+        setAuthStepLabel(
+          authMode === 'signin'
+            ? 'Deriving Argon2id keys & decrypting vault…'
+            : 'Deriving Argon2id keys & sealing new vault…'
+        );
 
         const existingProfile =
           (await remoteAdapter.getProfile(resolvedUserId)) ??
@@ -265,6 +301,12 @@ export function App() {
           await syncNow();
         }
       } else {
+        setAuthStepLabel(
+          authMode === 'signin'
+            ? 'Deriving Argon2id keys & decrypting vault…'
+            : 'Deriving Argon2id keys & sealing new vault…'
+        );
+
         if (authMode === 'signin') {
           const profiles = await pwaDb.profiles.toArray();
           const localProfile = profiles[0];
@@ -300,6 +342,7 @@ export function App() {
       setAuthError(err instanceof Error ? err.message : 'Failed to unlock or create vault');
     } finally {
       setAuthBusy(false);
+      setAuthStepLabel(null);
     }
   };
 
@@ -331,11 +374,33 @@ export function App() {
     });
   };
 
+  // 0. App Opening Boot Splash Transition
+  if (isBooting) {
+    return (
+      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center px-4">
+        <div className="vault-fade-in flex flex-col items-center text-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center vault-shield-pulse">
+            <Shield className="w-8 h-8 text-[var(--accent-soft)]" />
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
+              Pass-Vault
+            </h1>
+            <p className="text-xs text-[var(--text-muted)]">
+              Initializing zero-knowledge cryptographic engine…
+            </p>
+          </div>
+          <div className="h-1 w-44 rounded-full vault-shimmer-bar" />
+        </div>
+      </div>
+    );
+  }
+
   // 1. Auth / Onboarding Gate
   if (lockState === 'unauthenticated' || !userId) {
     return (
       <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center px-4 py-10">
-        <div className="w-full max-w-md space-y-6">
+        <div className="vault-fade-in w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
             <div className="w-16 h-16 mx-auto rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shadow-[0_0_36px_rgba(139,92,246,0.3)]">
               <Shield className="w-8 h-8 text-[var(--accent-soft)]" />
@@ -351,164 +416,183 @@ export function App() {
           {/* Sign In or Create Encrypted Vault */}
           <form
             onSubmit={(e) => void handleAuthSubmit(e)}
-            className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-3.5"
+            className="relative overflow-hidden rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5"
           >
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-              {authMode === 'signin' ? 'Sign In to Cloud Vault' : 'Create Encrypted Vault'}
-            </h2>
-
-            {authError && (
-              <p className="text-xs text-[var(--status-danger)]">{authError}</p>
+            {authBusy && (
+              <div className="vault-fade-in absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-2xl bg-[var(--bg-elevated)]/90 backdrop-blur-sm px-6 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center vault-shield-pulse">
+                  <Shield className="w-6 h-6 text-[var(--accent-soft)]" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-[var(--text-primary)]">
+                    {authStepLabel ?? 'Securing Vault Session…'}
+                  </p>
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    Client-side Argon2id + AES-256-GCM
+                  </p>
+                </div>
+                <div className="h-1.5 w-48 rounded-full vault-shimmer-bar" />
+              </div>
             )}
 
-            <div>
-              <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
-                Email Alias / Vault Label
-              </label>
-              <input
-                value={aliasInput}
-                onChange={(e) => setAliasInput(e.target.value)}
-                placeholder="yourname+vault@gmail.com"
-                className="w-full rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-              />
-            </div>
+            <div key={authMode} className="vault-scale-in space-y-3.5">
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+                {authMode === 'signin' ? 'Sign In to Cloud Vault' : 'Create Encrypted Vault'}
+              </h2>
 
-            <div>
-              <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
-                Master Password (never leaves device) *
-              </label>
-              <div className="relative">
+              {authError && (
+                <p className="vault-fade-in text-xs text-[var(--status-danger)]">{authError}</p>
+              )}
+
+              <div>
+                <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
+                  Email Alias / Vault Label
+                </label>
                 <input
-                  type={showMaster ? 'text' : 'password'}
-                  required
-                  value={masterInput}
-                  onChange={(e) => setMasterInput(e.target.value)}
-                  placeholder="Minimum 8 characters"
-                  className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                  value={aliasInput}
+                  onChange={(e) => setAliasInput(e.target.value)}
+                  placeholder="yourname+vault@gmail.com"
+                  className="w-full rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
                 />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
+                  Master Password (never leaves device) *
+                </label>
+                <div className="relative">
+                  <input
+                    type={showMaster ? 'text' : 'password'}
+                    required
+                    value={masterInput}
+                    onChange={(e) => setMasterInput(e.target.value)}
+                    placeholder="Minimum 8 characters"
+                    className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowMaster((prev) => !prev)}
+                    aria-label={showMaster ? 'Hide master password' : 'Show master password'}
+                    title={showMaster ? 'Hide master password' : 'Show master password'}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                  >
+                    {showMaster ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {authMode === 'create' && (
+                <>
+                  <div>
+                    <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
+                      Confirm Master Password *
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showConfirmMaster ? 'text' : 'password'}
+                        required
+                        value={confirmMasterInput}
+                        onChange={(e) => setConfirmMasterInput(e.target.value)}
+                        placeholder="Re-enter Master Password"
+                        className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmMaster((prev) => !prev)}
+                        aria-label={
+                          showConfirmMaster
+                            ? 'Hide confirm master password'
+                            : 'Show confirm master password'
+                        }
+                        title={
+                          showConfirmMaster
+                            ? 'Hide confirm master password'
+                            : 'Show confirm master password'
+                        }
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                      >
+                        {showConfirmMaster ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
+                      6-Digit Quick-Unlock PIN (optional)
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPin ? 'text' : 'password'}
+                        inputMode="numeric"
+                        maxLength={6}
+                        value={pinInput}
+                        onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
+                        placeholder="e.g. 048291"
+                        className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPin((prev) => !prev)}
+                        aria-label={showPin ? 'Hide Quick-Unlock PIN' : 'Show Quick-Unlock PIN'}
+                        title={showPin ? 'Hide Quick-Unlock PIN' : 'Show Quick-Unlock PIN'}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                      >
+                        {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <button
+                type="submit"
+                disabled={authBusy}
+                className="w-full py-3 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-sm font-semibold text-white shadow-[0_0_24px_rgba(139,92,246,0.4)] transition-all disabled:opacity-60"
+              >
+                {authBusy
+                  ? authMode === 'signin'
+                    ? 'Authenticating & Decrypting Vault…'
+                    : 'Creating Encrypted Vault (Argon2id)…'
+                  : authMode === 'signin'
+                    ? 'Sign In'
+                    : 'Create Encrypted Vault'}
+              </button>
+
+              <div className="pt-1 text-center">
                 <button
                   type="button"
-                  onClick={() => setShowMaster((prev) => !prev)}
-                  aria-label={showMaster ? 'Hide master password' : 'Show master password'}
-                  title={showMaster ? 'Hide master password' : 'Show master password'}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+                  onClick={() => {
+                    setAuthMode((prev) => (prev === 'signin' ? 'create' : 'signin'));
+                    setAuthError(null);
+                    setConfirmMasterInput('');
+                    setPinInput('');
+                    setShowMaster(false);
+                    setShowConfirmMaster(false);
+                    setShowPin(false);
+                  }}
+                  className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
                 >
-                  {showMaster ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {authMode === 'signin' ? (
+                    <>
+                      New to Pass-Vault?{' '}
+                      <span className="font-semibold text-[var(--accent-soft)] hover:underline">
+                        Create Encrypted Vault
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      Already have a vault?{' '}
+                      <span className="font-semibold text-[var(--accent-soft)] hover:underline">
+                        Sign In
+                      </span>
+                    </>
+                  )}
                 </button>
               </div>
-            </div>
-
-            {authMode === 'create' && (
-              <>
-                <div>
-                  <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
-                    Confirm Master Password *
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmMaster ? 'text' : 'password'}
-                      required
-                      value={confirmMasterInput}
-                      onChange={(e) => setConfirmMasterInput(e.target.value)}
-                      placeholder="Re-enter Master Password"
-                      className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmMaster((prev) => !prev)}
-                      aria-label={
-                        showConfirmMaster
-                          ? 'Hide confirm master password'
-                          : 'Show confirm master password'
-                      }
-                      title={
-                        showConfirmMaster
-                          ? 'Hide confirm master password'
-                          : 'Show confirm master password'
-                      }
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                    >
-                      {showConfirmMaster ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-medium text-[var(--text-muted)] mb-1">
-                    6-Digit Quick-Unlock PIN (optional)
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPin ? 'text' : 'password'}
-                      inputMode="numeric"
-                      maxLength={6}
-                      value={pinInput}
-                      onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-                      placeholder="e.g. 048291"
-                      className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-3.5 pr-10 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPin((prev) => !prev)}
-                      aria-label={showPin ? 'Hide Quick-Unlock PIN' : 'Show Quick-Unlock PIN'}
-                      title={showPin ? 'Hide Quick-Unlock PIN' : 'Show Quick-Unlock PIN'}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-                    >
-                      {showPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <button
-              type="submit"
-              disabled={authBusy}
-              className="w-full py-3 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-sm font-semibold text-white shadow-[0_0_24px_rgba(139,92,246,0.4)] transition-all disabled:opacity-60"
-            >
-              {authBusy
-                ? authMode === 'signin'
-                  ? 'Authenticating & Decrypting Vault…'
-                  : 'Creating Encrypted Vault (Argon2id)…'
-                : authMode === 'signin'
-                  ? 'Sign In'
-                  : 'Create Encrypted Vault'}
-            </button>
-
-            <div className="pt-1 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode((prev) => (prev === 'signin' ? 'create' : 'signin'));
-                  setAuthError(null);
-                  setConfirmMasterInput('');
-                  setPinInput('');
-                  setShowMaster(false);
-                  setShowConfirmMaster(false);
-                  setShowPin(false);
-                }}
-                className="text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-              >
-                {authMode === 'signin' ? (
-                  <>
-                    New to Pass-Vault?{' '}
-                    <span className="font-semibold text-[var(--accent-soft)] hover:underline">
-                      Create Encrypted Vault
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    Already have a vault?{' '}
-                    <span className="font-semibold text-[var(--accent-soft)] hover:underline">
-                      Sign In
-                    </span>
-                  </>
-                )}
-              </button>
             </div>
           </form>
         </div>
@@ -532,7 +616,7 @@ export function App() {
 
   // 3. Unlocked Mobile-First + Desktop 3-Pane Workspace
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex flex-col md:flex-row">
+    <div className="vault-fade-in min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex flex-col md:flex-row">
       {/* Desktop Left Sidebar (>= 768px) */}
       <aside className="hidden md:flex md:w-60 shrink-0 flex-col justify-between bg-[var(--bg-elevated)] border-r border-[var(--border-subtle)] p-4">
         <div className="space-y-6">
@@ -737,7 +821,7 @@ export function App() {
 
         {/* Body Content */}
         {activeTab === 'generator' ? (
-          <div className="p-4 md:p-8 flex-1 overflow-y-auto">
+          <div key="tab-generator" className="vault-fade-in p-4 md:p-8 flex-1 overflow-y-auto">
             <GeneratorView
               onCopySecret={triggerClipboardCountdown}
               onUseInNewItem={(secret, category) => {
@@ -749,7 +833,7 @@ export function App() {
             />
           </div>
         ) : activeTab === 'import' ? (
-          <div className="p-4 md:p-8 flex-1 overflow-y-auto">
+          <div key="tab-import" className="vault-fade-in p-4 md:p-8 flex-1 overflow-y-auto">
             <ImportView
               onImportItems={async (importedItems) => {
                 for (const item of importedItems) {
@@ -764,7 +848,7 @@ export function App() {
             />
           </div>
         ) : activeTab === 'settings' ? (
-          <div className="p-4 md:p-8 flex-1 overflow-y-auto">
+          <div key="tab-settings" className="vault-fade-in p-4 md:p-8 flex-1 overflow-y-auto">
             <SettingsView
               autoLockSeconds={prefs.autoLockSeconds}
               onChangeAutoLock={(sec) => {
@@ -775,7 +859,7 @@ export function App() {
             />
           </div>
         ) : (
-          <div className="flex-1 flex min-h-0">
+          <div key="tab-vault" className="vault-fade-in flex-1 flex min-h-0">
             {/* Item List Column (Full-width mobile / 340px desktop) */}
             <section className="w-full md:w-[360px] shrink-0 md:border-r md:border-[var(--border-subtle)] flex flex-col">
               {/* Desktop Search Header */}
@@ -799,74 +883,76 @@ export function App() {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-3 md:p-3 space-y-2 pb-28 md:pb-4">
-                {filteredItems.length === 0 ? (
-                  <div className="text-center py-12 px-4 space-y-2">
-                    <p className="text-sm font-medium text-[var(--text-secondary)]">
-                      No items match your filter
-                    </p>
-                    <p className="text-xs text-[var(--text-muted)]">
-                      Tap + to encrypt and save a new password, PIN, card, or note.
-                    </p>
-                  </div>
-                ) : (
-                  filteredItems.map((item) => {
-                    const isSelected = selectedItem?.id === item.id;
-                    const primary = getPrimarySecret(item);
-                    return (
-                      <div
-                        key={item.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => {
-                          setSelectedId(item.id);
-                          setMobileSheetOpen(true);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
+              <div className="flex-1 overflow-y-auto p-3 md:p-3 pb-28 md:pb-4">
+                <div key={`${activeTab}-${filter}`} className="vault-fade-in space-y-2">
+                  {filteredItems.length === 0 ? (
+                    <div className="text-center py-12 px-4 space-y-2">
+                      <p className="text-sm font-medium text-[var(--text-secondary)]">
+                        No items match your filter
+                      </p>
+                      <p className="text-xs text-[var(--text-muted)]">
+                        Tap + to encrypt and save a new password, PIN, card, or note.
+                      </p>
+                    </div>
+                  ) : (
+                    filteredItems.map((item) => {
+                      const isSelected = selectedItem?.id === item.id;
+                      const primary = getPrimarySecret(item);
+                      return (
+                        <div
+                          key={item.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => {
                             setSelectedId(item.id);
                             setMobileSheetOpen(true);
-                          }
-                        }}
-                        className={`group rounded-2xl border p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-all ${
-                          isSelected
-                            ? 'bg-[var(--accent-tint)] border-[var(--accent-primary)]/50'
-                            : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] hover:bg-[var(--bg-surface)]'
-                        }`}
-                      >
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <CategoryBadge category={item.category} showLabel={false} />
-                            <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                              {item.title}
-                            </span>
-                            {item.isFavorite && (
-                              <Star className="w-3.5 h-3.5 text-amber-300 fill-amber-300 shrink-0" />
-                            )}
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setSelectedId(item.id);
+                              setMobileSheetOpen(true);
+                            }
+                          }}
+                          className={`group rounded-2xl border p-3.5 flex items-center justify-between gap-3 cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-[var(--accent-tint)] border-[var(--accent-primary)]/50'
+                              : 'bg-[var(--bg-elevated)] border-[var(--border-subtle)] hover:bg-[var(--bg-surface)]'
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <CategoryBadge category={item.category} showLabel={false} />
+                              <span className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                                {item.title}
+                              </span>
+                              {item.isFavorite && (
+                                <Star className="w-3.5 h-3.5 text-amber-300 fill-amber-300 shrink-0" />
+                              )}
+                            </div>
+                            <div className="text-xs text-[var(--text-muted)] truncate pl-0.5">
+                              {getItemSubtitle(item)}
+                            </div>
                           </div>
-                          <div className="text-xs text-[var(--text-muted)] truncate pl-0.5">
-                            {getItemSubtitle(item)}
-                          </div>
-                        </div>
 
-                        <CopyButton
-                          value={primary.value}
-                          label={primary.label}
-                          onCopied={triggerClipboardCountdown}
-                          compact
-                        />
-                      </div>
-                    );
-                  })
-                )}
+                          <CopyButton
+                            value={primary.value}
+                            label={primary.label}
+                            onCopied={triggerClipboardCountdown}
+                            compact
+                          />
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
             </section>
 
             {/* Desktop Right Detail Inspector (>= 768px) */}
             <section className="hidden md:block flex-1 overflow-y-auto p-6 lg:p-8">
               {selectedItem ? (
-                <div className="max-w-2xl">
+                <div key={selectedItem.id} className="vault-fade-in max-w-2xl">
                   <ItemInspector
                     item={selectedItem}
                     onCopySecret={triggerClipboardCountdown}
@@ -892,11 +978,11 @@ export function App() {
       {/* Mobile Slide-Up Bottom Sheet Inspector (< 768px) */}
       {mobileSheetOpen && selectedItem && (activeTab === 'vault' || activeTab === 'pins') && (
         <div
-          className="md:hidden fixed inset-0 z-40 flex items-end bg-black/70 backdrop-blur-xs"
+          className="md:hidden fixed inset-0 z-40 flex items-end bg-black/70 backdrop-blur-xs transition-opacity"
           onClick={() => setMobileSheetOpen(false)}
         >
           <div
-            className="w-full max-h-[88vh] overflow-y-auto rounded-t-3xl bg-[var(--bg-elevated)] border-t border-[var(--border-subtle)] p-5 pb-8"
+            className="vault-slide-up w-full max-h-[88vh] overflow-y-auto rounded-t-3xl bg-[var(--bg-elevated)] border-t border-[var(--border-subtle)] p-5 pb-8"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="w-10 h-1 rounded-full bg-[var(--border-subtle)] mx-auto mb-4" />
@@ -972,7 +1058,7 @@ export function App() {
 
       {/* 30-Second Clipboard Auto-Clear Countdown Toast */}
       {clipboardTimer && (
-        <div className="fixed bottom-20 md:bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-full bg-[var(--bg-elevated)] border border-[var(--accent-primary)]/50 shadow-[0_8px_32px_rgba(0,0,0,0.65)] text-xs whitespace-nowrap">
+        <div className="vault-slide-up fixed bottom-20 md:bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-full bg-[var(--bg-elevated)] border border-[var(--accent-primary)]/50 shadow-[0_8px_32px_rgba(0,0,0,0.65)] text-xs whitespace-nowrap">
           <span className="text-[var(--text-primary)] font-medium">
             {clipboardTimer.label} copied
           </span>
