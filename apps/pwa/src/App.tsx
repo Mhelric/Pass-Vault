@@ -276,23 +276,26 @@ export function App() {
 
   useEffect(() => {
     if (isBooting) return;
-    const ensureGuard = () => {
+    if (!(window.history.state as { passVaultRoot?: boolean; passVaultGuard?: boolean } | null)?.passVaultRoot &&
+        !(window.history.state as { passVaultGuard?: boolean } | null)?.passVaultGuard) {
+      window.history.replaceState({ passVaultRoot: true }, '');
+    }
+    const armGuardOnGesture = () => {
       if (exitingRef.current) return;
       if (!(window.history.state as { passVaultGuard?: boolean } | null)?.passVaultGuard) {
         window.history.pushState({ passVaultGuard: true }, '');
       }
     };
-    ensureGuard();
     const onPopState = () => {
       backHandlerRef.current();
     };
     window.addEventListener('popstate', onPopState);
-    window.addEventListener('pointerdown', ensureGuard, { passive: true });
-    window.addEventListener('keydown', ensureGuard, { passive: true });
+    window.addEventListener('pointerdown', armGuardOnGesture, { passive: true });
+    window.addEventListener('keydown', armGuardOnGesture, { passive: true });
     return () => {
       window.removeEventListener('popstate', onPopState);
-      window.removeEventListener('pointerdown', ensureGuard);
-      window.removeEventListener('keydown', ensureGuard);
+      window.removeEventListener('pointerdown', armGuardOnGesture);
+      window.removeEventListener('keydown', armGuardOnGesture);
     };
   }, [isBooting]);
 
