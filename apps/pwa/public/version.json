@@ -1,5 +1,5 @@
 {
-  "version": "1.0.2",
+  "version": "1.0.3",
   "apkUrl": "https://pass-vault-mhel.vercel.app/Pass-Vault.apk",
-  "notes": "Fixed Android status bar spacing and centered lock screen layout."
+  "notes": "Added native Android Fingerprint & Face Unlock (BiometricPrompt + Keystore)."
 }

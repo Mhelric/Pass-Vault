@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEMO_BIO_SECRET_STORAGE_KEY } from '../demoSeed.js';
+import { enrollNativeBiometric, isNativeBiometricAvailable } from '../nativeBiometric.js';
 import { isSupabaseConfigured, pwaDb, saveUiPreferences, useVault } from '../vaultRuntime.js';
 
 export interface SettingsViewProps {
@@ -67,6 +68,10 @@ export function SettingsView({
       (window.navigator as { standalone?: boolean }).standalone === true);
 
   useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      void isNativeBiometricAvailable().then(setBioHardwareSupported);
+      return;
+    }
     void isPlatformBiometricAvailable().then(setBioHardwareSupported);
   }, []);
 
@@ -110,14 +115,27 @@ export function SettingsView({
   };
 
   const handleEnrollBiometrics = async () => {
+    if (!userId) return;
+    setPinMsg(null);
     const secret = randomBytes(32);
-    await enableBiometricUnlock(secret, 'local-platform-authenticator');
-    sessionStorage.setItem(
-      DEMO_BIO_SECRET_STORAGE_KEY,
-      btoa(String.fromCharCode(...secret))
-    );
-    secret.fill(0);
-    setPinMsg('Biometric unlock configured on this device.');
+    try {
+      if (Capacitor.isNativePlatform()) {
+        await enrollNativeBiometric(userId, secret);
+        await enableBiometricUnlock(secret, 'android-biometric-keystore');
+        setPinMsg('Native fingerprint / face unlock enabled on this device.');
+      } else {
+        await enableBiometricUnlock(secret, 'local-platform-authenticator');
+        sessionStorage.setItem(
+          DEMO_BIO_SECRET_STORAGE_KEY,
+          btoa(String.fromCharCode(...secret))
+        );
+        setPinMsg('Biometric unlock configured for this browser session.');
+      }
+    } catch (err) {
+      setPinMsg(err instanceof Error ? err.message : 'Biometric setup cancelled or unavailable.');
+    } finally {
+      secret.fill(0);
+    }
   };
 
   const handleExportBackup = async () => {
@@ -229,9 +247,13 @@ export function SettingsView({
               <span>FaceID / Fingerprint Unlock</span>
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-0.5">
-              {bioHardwareSupported
-                ? 'Platform biometric authenticator detected'
-                : 'Browser preview mode (WebAuthn ready on HTTPS mobile/desktop)'}
+              {Capacitor.isNativePlatform()
+                ? bioHardwareSupported
+                  ? 'Android BiometricPrompt + Keystore ready'
+                  : 'No fingerprint or face unlock enrolled in Android Settings'
+                : bioHardwareSupported
+                  ? 'Platform biometric authenticator detected'
+                  : 'Browser preview mode (WebAuthn ready on HTTPS mobile/desktop)'}
             </p>
           </div>
           <button

@@ -1,8 +1,10 @@
+import { Capacitor } from '@capacitor/core';
 import { MAX_PIN_ATTEMPTS } from '@vault/core';
 import { PinKeypad, SecretInput } from '@vault/ui';
 import { KeyRound, ShieldAlert, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { DEMO_BIO_SECRET_STORAGE_KEY } from '../demoSeed.js';
+import { authenticateNativeBiometric } from '../nativeBiometric.js';
 import { saveUiPreferences, useVault } from '../vaultRuntime.js';
 
 export interface LockOverlayProps {
@@ -50,9 +52,24 @@ export function LockOverlay({ aliasLabel }: LockOverlayProps) {
 
   const handleBiometricTrigger = async () => {
     setLocalError(null);
+    if (Capacitor.isNativePlatform()) {
+      if (!userId) return;
+      setIsBusy(true);
+      try {
+        const bytes = await authenticateNativeBiometric(userId);
+        await unlockWithBiometrics(bytes);
+        bytes.fill(0);
+      } catch (error) {
+        setLocalError(error instanceof Error ? error.message : 'Biometric authentication failed');
+      } finally {
+        setIsBusy(false);
+      }
+      return;
+    }
+
     const demoSecretB64 = sessionStorage.getItem(DEMO_BIO_SECRET_STORAGE_KEY);
     if (!demoSecretB64) {
-      setLocalError('Biometric secret unavailable in this session; enter your PIN or Master Password.');
+      setLocalError('Biometric secret unavailable in this browser session; enter your PIN or Master Password.');
       return;
     }
 
