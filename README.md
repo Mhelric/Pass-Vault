@@ -7,6 +7,34 @@ A mobile-first, zero-knowledge personal vault built as a native Android APK, Pro
 
 See [BLUEPRINT.md](./BLUEPRINT.md) for the complete technical and cryptographic design specification.
 
+## Features & Capabilities
+
+### Zero-Knowledge Security & Encryption
+- **Client-Side Cryptography:** `Argon2id` (with `PBKDF2-HMAC-SHA256` fallback) key derivation, `HKDF-SHA256` subkey splitting, wrapped Vault Encryption Key (`VEK`), and `AES-256-GCM` authenticated encryption with 96-bit IVs and AAD binding. Secrets are never sent to the server in plaintext.
+- **Multi-Mode Unlock:** Master Password, 6-digit Quick-Unlock PIN, and native Android **Fingerprint / Face Unlock** (`BiometricPrompt` + `AndroidKeyStore` AES-256-GCM in the APK).
+- **5-Strike PIN Protection:** Automatically wipes locally wrapped unlock keys after 5 failed PIN attempts, falling back safely to Master Password recovery.
+- **Auto-Lock & Clipboard Safety:** Configurable background/idle auto-lock timer (`Immediate`, `1m`, `2m`, `5m`) and a 30-second clipboard auto-clear countdown after copying secrets.
+
+### Vault Management & Item Types
+- **Logins:** Email, Username, optional **ID**, optional **PIN**, masked Password with eye toggle & strength/typing feedback, Website URLs, Notes, and **Password History** (tracks up to 10 previous passwords with **Clear History** and per-entry delete).
+- **PINs & Passcodes:** Separate **PIN** and **Passcode** fields (either or both; optional for `SIM / PUK`), category tags (`Bank / ATM / E-Wallet`, `Device / Phone`, `SIM / PUK`, `Door / Alarm`, `Gov / Work ID`, `Other`), and associated account/device.
+- **Payment Cards:** Cardholder name, card number, brand, expiry, masked CVV & Card PIN, and billing ZIP.
+- **Secure Notes & 2FA:** Optional **ID**, encrypted note content, and interactive **One-Time Recovery Codes** checklist.
+- **Organization & Search:** Favorites-first, oldest-to-newest sorting, instant filtering by keyword or `#tag` in the search bar, clickable `#tag` badges, and `Ctrl/Cmd + K` Quick Search command palette.
+
+### Cross-Platform Experience
+- **Desktop Web App:** 3-pane layout with a collapsible left sidebar (collapses to a minimal Shield + Search rail), hover-resizable pane dividers, and `localStorage`-persisted layout widths.
+- **Native Android APK:** Capacitor-wrapped Android app (`com.mhelric.passvault`) signed with a persistent release keystore, native status-bar safe-area handling, hardware Back-button **Close Pass-Vault?** confirmation popup, and automatic startup **Update Available** check.
+- **Mobile Web App:** Fixed glassmorphic bottom navigation bar, slide-up item inspector, and zero premature scrolling on short lists.
+- **Companion Browser Extension (`apps/extension`):** Manifest V3 extension with active-tab domain matching and one-click form autofill.
+
+### Tools, Sync & Backups
+- **Offline-First Cloud Sync:** Works offline via IndexedDB (`Dexie.js`) and syncs encrypted deltas to Supabase across devices.
+- **Password & PIN Generator:** CSPRNG-backed strong password, passphrase, and numeric PIN generator with one-click copy or direct item creation.
+- **Smart Importer:** Parses `.txt` credential lists and Google Keep notes into a staging inbox before encrypting into your vault.
+- **Offline Vault Health Audit:** Collapsible **Scan / Details** check in Settings that detects weak or reused passwords/PINs strictly in RAM.
+- **Encrypted `.vault` Backups:** Export and restore standalone password-protected `.vault` backup files offline.
+
 ## Architecture
 
 - **`packages/crypto` (`@vault/crypto`)**: Client-side `Argon2id` / `PBKDF2-SHA256` KDF, `HKDF-SHA256` subkey splitting, `VEK` wrapping, `AES-256-GCM` encryption with 96-bit IVs and AAD binding, WebAuthn biometric helpers, CSPRNG generator, and byte zeroization.
