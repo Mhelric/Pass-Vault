@@ -324,9 +324,8 @@ export function SettingsView({
           ) : (
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <a
-                href="https://github.com/Mhelric/password-manager/releases/latest/download/Pass-Vault.apk"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/Pass-Vault.apk"
+                download="Pass-Vault.apk"
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-xs font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.3)]"
               >
                 <Download className="w-3.5 h-3.5" />

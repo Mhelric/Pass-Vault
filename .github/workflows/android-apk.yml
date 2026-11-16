@@ -45,7 +45,9 @@ jobs:
 
       - name: Sync Capacitor Android project
         working-directory: apps/pwa
-        run: npx cap sync android
+        run: |
+          rm -f dist/Pass-Vault.apk
+          npx cap sync android
 
       - name: Build Debug APK
         working-directory: apps/pwa/android
