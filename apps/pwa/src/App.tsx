@@ -71,7 +71,6 @@ export function App() {
   const [prefs, setPrefs] = useState(loadUiPreferences);
   const [activeTab, setActiveTab] = useState<ActiveTab>('vault');
   const [filter, setFilter] = useState<VaultFilter>('all');
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
@@ -386,22 +385,10 @@ export function App() {
     setClipboardTimer({ label, secondsLeft: 30 });
   }, []);
 
-  const availableTags = useMemo(() => {
-    const seen = new Map<string, string>();
-    for (const item of items) {
-      for (const tag of item.tags) {
-        const trimmed = tag.trim();
-        if (trimmed && !seen.has(trimmed.toLowerCase())) {
-          seen.set(trimmed.toLowerCase(), trimmed);
-        }
-      }
-    }
-    return Array.from(seen.values()).sort((a, b) => a.localeCompare(b));
-  }, [items]);
-
   const filteredItems = useMemo(() => {
     const effectiveCategory = activeTab === 'pins' ? 'pin' : filter;
     const q = searchQuery.trim().toLowerCase();
+    const tagQuery = q.startsWith('#') ? q.slice(1) : q;
 
     return items
       .filter((item) => {
@@ -413,23 +400,19 @@ export function App() {
         ) {
           return false;
         }
-        if (
-          selectedTag &&
-          !item.tags.some((t) => t.trim().toLowerCase() === selectedTag.toLowerCase())
-        ) {
-          return false;
-        }
 
         if (!q) return true;
         const sub = getItemSubtitle(item).toLowerCase();
         const accountIdMatch =
           (item.category === 'login' || item.category === 'note') &&
           (item.accountId ?? '').toLowerCase().includes(q);
+        const tagMatch =
+          tagQuery.length > 0 && item.tags.some((t) => t.toLowerCase().includes(tagQuery));
         return (
           item.title.toLowerCase().includes(q) ||
           sub.includes(q) ||
           accountIdMatch ||
-          item.tags.some((t) => t.toLowerCase().includes(q))
+          tagMatch
         );
       })
       .sort((a, b) => {
@@ -438,7 +421,7 @@ export function App() {
         }
         return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
       });
-  }, [items, activeTab, filter, selectedTag, searchQuery]);
+  }, [items, activeTab, filter, searchQuery]);
 
   const selectedItem = useMemo(
     () => items.find((i) => i.id === selectedId) ?? filteredItems[0] ?? null,
@@ -1074,47 +1057,6 @@ export function App() {
               <Settings className="w-4 h-4 text-[var(--text-muted)]" />
               <span>Security & Settings</span>
             </button>
-
-            {availableTags.length > 0 && (
-              <div className="pt-3 space-y-1.5">
-                <div className="flex items-center justify-between px-2">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-                    Tags
-                  </span>
-                  {selectedTag && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedTag(null)}
-                      className="text-[10px] font-medium text-[var(--accent-soft)] hover:text-white"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-1.5 px-1">
-                  {availableTags.map((tag) => {
-                    const active = selectedTag?.toLowerCase() === tag.toLowerCase();
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => {
-                          setActiveTab('vault');
-                          setSelectedTag(active ? null : tag);
-                        }}
-                        className={`px-2 py-1 rounded-full text-[11px] font-medium border transition-colors ${
-                          active
-                            ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
-                            : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:text-white'
-                        }`}
-                      >
-                        #{tag}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
           </nav>
         </div>
 
@@ -1207,51 +1149,28 @@ export function App() {
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search logins, PINs, cards, notes…"
+                  placeholder="Search items or #tags…"
                   className="w-full rounded-xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] pl-9 pr-3.5 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
                 />
               </div>
 
               {activeTab === 'vault' && (
-                <>
-                  <div className="flex gap-2 overflow-x-auto pb-0.5 no-scrollbar">
-                    {categoryNav.map((pill) => (
-                      <button
-                        key={pill.id}
-                        type="button"
-                        onClick={() => navigateTab('vault', pill.id)}
-                        className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                          filter === pill.id
-                            ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
-                            : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]'
-                        }`}
-                      >
-                        {pill.label}
-                      </button>
-                    ))}
-                  </div>
-                  {availableTags.length > 0 && (
-                    <div className="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
-                      {availableTags.map((tag) => {
-                        const active = selectedTag?.toLowerCase() === tag.toLowerCase();
-                        return (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => setSelectedTag(active ? null : tag)}
-                            className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
-                              active
-                                ? 'bg-[var(--accent-tint)] text-white border-[var(--accent-primary)]'
-                                : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]'
-                            }`}
-                          >
-                            #{tag}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </>
+                <div className="flex gap-2 overflow-x-auto pb-0.5 no-scrollbar">
+                  {categoryNav.map((pill) => (
+                    <button
+                      key={pill.id}
+                      type="button"
+                      onClick={() => navigateTab('vault', pill.id)}
+                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        filter === pill.id
+                          ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
+                          : 'bg-[var(--bg-elevated)] text-[var(--text-muted)] border-[var(--border-subtle)]'
+                      }`}
+                    >
+                      {pill.label}
+                    </button>
+                  ))}
+                </div>
               )}
             </>
           )}
@@ -1320,7 +1239,7 @@ export function App() {
                   <input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Filter items…"
+                    placeholder="Filter items or #tags…"
                     className="w-full rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] pl-9 pr-3 py-2 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent-primary)]"
                   />
                 </div>
@@ -1438,11 +1357,13 @@ export function App() {
                     onToggleRecoveryCode={handleToggleRecoveryCode}
                     onDeletePasswordHistoryEntry={handleDeletePasswordHistoryEntry}
                     onClearPasswordHistory={handleClearPasswordHistory}
-                    selectedTag={selectedTag}
+                    selectedTag={
+                      searchQuery.trim().startsWith('#') ? searchQuery.trim().slice(1) : null
+                    }
                     onSelectTag={(tag) => {
                       setActiveTab('vault');
-                      setSelectedTag((prev) =>
-                        prev?.toLowerCase() === tag.toLowerCase() ? null : tag
+                      setSearchQuery((prev) =>
+                        prev.trim().toLowerCase() === `#${tag.toLowerCase()}` ? '' : `#${tag}`
                       );
                     }}
                   />
@@ -1491,12 +1412,14 @@ export function App() {
               onToggleRecoveryCode={handleToggleRecoveryCode}
               onDeletePasswordHistoryEntry={handleDeletePasswordHistoryEntry}
               onClearPasswordHistory={handleClearPasswordHistory}
-              selectedTag={selectedTag}
+              selectedTag={
+                searchQuery.trim().startsWith('#') ? searchQuery.trim().slice(1) : null
+              }
               onSelectTag={(tag) => {
                 setMobileSheetOpen(false);
                 setActiveTab('vault');
-                setSelectedTag((prev) =>
-                  prev?.toLowerCase() === tag.toLowerCase() ? null : tag
+                setSearchQuery((prev) =>
+                  prev.trim().toLowerCase() === `#${tag.toLowerCase()}` ? '' : `#${tag}`
                 );
               }}
             />
