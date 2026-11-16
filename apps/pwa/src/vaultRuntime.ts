@@ -40,6 +40,9 @@ export interface UiPreferences {
   aliasLabel: string | null;
   autoLockSeconds: number; // 0 = immediate on hide/blur, 60 = 1m, 120 = 2m, 300 = 5m
   isDemoMode: boolean;
+  sidebarCollapsed: boolean;
+  sidebarWidth: number;
+  listWidth: number;
 }
 
 const DEFAULT_PREFS: UiPreferences = {
@@ -47,6 +50,9 @@ const DEFAULT_PREFS: UiPreferences = {
   aliasLabel: null,
   autoLockSeconds: 120,
   isDemoMode: false,
+  sidebarCollapsed: false,
+  sidebarWidth: 240,
+  listWidth: 360,
 };
 
 export function loadUiPreferences(): UiPreferences {

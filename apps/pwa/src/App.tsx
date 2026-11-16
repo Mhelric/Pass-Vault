@@ -97,10 +97,19 @@ export function App() {
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const navHistoryRef = useRef<Array<{ tab: ActiveTab; filter: VaultFilter }>>([]);
   const exitingRef = useRef(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(240);
-  const [listWidth, setListWidth] = useState(360);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => prefs.sidebarCollapsed);
+  const [sidebarWidth, setSidebarWidth] = useState(() =>
+    Math.min(360, Math.max(180, prefs.sidebarWidth))
+  );
+  const [listWidth, setListWidth] = useState(() =>
+    Math.min(560, Math.max(260, prefs.listWidth))
+  );
   const [resizingTarget, setResizingTarget] = useState<'sidebar' | 'list' | null>(null);
+
+  useEffect(() => {
+    if (resizingTarget !== null) return;
+    saveUiPreferences({ sidebarCollapsed, sidebarWidth, listWidth });
+  }, [sidebarCollapsed, sidebarWidth, listWidth, resizingTarget]);
   const [installPrompt, setInstallPrompt] = useState<
     (Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }) | null
   >(null);
