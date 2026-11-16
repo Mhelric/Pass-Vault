@@ -303,25 +303,21 @@ export function SettingsView({
         )}
       </div>
 
-      {/* Direct App Download / Install */}
-      <div className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <Smartphone className="w-4 h-4 text-[var(--accent-soft)] shrink-0" />
-            <div>
-              <div className="text-sm font-semibold text-[var(--text-primary)]">
-                Download Pass-Vault App
+      {/* Direct App Download / Install (Web only — hidden inside native APK) */}
+      {!Capacitor.isNativePlatform() && (
+        <div className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <Smartphone className="w-4 h-4 text-[var(--accent-soft)] shrink-0" />
+              <div>
+                <div className="text-sm font-semibold text-[var(--text-primary)]">
+                  Download Pass-Vault App
+                </div>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                  Install Pass-Vault as a native Android APK or offline web app.
+                </p>
               </div>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                Install Pass-Vault as a native Android APK or offline web app.
-              </p>
             </div>
-          </div>
-          {Capacitor.isNativePlatform() ? (
-            <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0 self-start sm:self-center">
-              Android App Active
-            </span>
-          ) : (
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <a
                 href="/Pass-Vault.apk"
@@ -359,10 +355,10 @@ export function SettingsView({
                 </button>
               )}
             </div>
-          )}
+          </div>
+          {installHint && <p className="text-xs text-[var(--text-secondary)]">{installHint}</p>}
         </div>
-        {installHint && <p className="text-xs text-[var(--text-secondary)]">{installHint}</p>}
-      </div>
+      )}
 
       {/* Encrypted Offline Backup (.vault) */}
       <div className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-3">

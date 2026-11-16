@@ -262,17 +262,6 @@ export function App() {
       setMobileSheetOpen(false);
       return;
     }
-    const previous = navHistoryRef.current.pop();
-    if (previous) {
-      setActiveTab(previous.tab);
-      setFilter(previous.filter);
-      return;
-    }
-    if (activeTab !== 'vault' || filter !== 'all') {
-      setActiveTab('vault');
-      setFilter('all');
-      return;
-    }
     setExitConfirmOpen(true);
   };
 

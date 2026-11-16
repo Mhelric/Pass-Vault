@@ -88,9 +88,9 @@ export function LockOverlay({ aliasLabel }: LockOverlayProps) {
   };
 
   return (
-    <div className="vault-fade-in fixed inset-0 z-50 flex flex-col justify-between bg-[var(--bg-primary)] px-6 py-10 overflow-y-auto">
-      {/* Top 35%: Vault Status Emblem */}
-      <div className="flex flex-col items-center text-center mt-4">
+    <div className="vault-fade-in fixed inset-0 z-50 flex flex-col justify-end bg-[var(--bg-primary)] px-6 pt-12 pb-8 overflow-y-auto">
+      {/* Vault Status Emblem */}
+      <div className="flex flex-col items-center text-center mb-7">
         <div
           className={`w-16 h-16 rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shadow-[0_0_32px_rgba(139,92,246,0.28)] mb-4 transition-all ${
             isBusy ? 'vault-shield-pulse' : ''
@@ -119,8 +119,8 @@ export function LockOverlay({ aliasLabel }: LockOverlayProps) {
         )}
       </div>
 
-      {/* Bottom 65%: Thumb-zone PIN Pad or Master Password Gate */}
-      <div key={showMasterForm ? 'master' : 'pin'} className="vault-scale-in w-full max-w-sm mx-auto my-6">
+      {/* Thumb-zone PIN Pad or Master Password Gate */}
+      <div key={showMasterForm ? 'master' : 'pin'} className="vault-scale-in w-full max-w-sm mx-auto mb-5">
         {!showMasterForm ? (
           <div className="space-y-6">
             <PinKeypad
