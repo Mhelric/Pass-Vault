@@ -51,6 +51,11 @@ export function ItemFormModal({
   const [username, setUsername] = useState(
     initialItem?.category === 'login' ? (initialItem.username ?? '') : ''
   );
+  const [accountId, setAccountId] = useState(
+    initialItem?.category === 'login' || initialItem?.category === 'note'
+      ? (initialItem.accountId ?? '')
+      : ''
+  );
   const [password, setPassword] = useState(
     initialItem?.category === 'login'
       ? initialItem.password
@@ -145,6 +150,7 @@ export function ItemFormModal({
           updatedAt: now,
           email: email.trim() || undefined,
           username: username.trim() || undefined,
+          accountId: accountId.trim() || undefined,
           password,
           urls: urlsText
             .split(',')
@@ -200,6 +206,7 @@ export function ItemFormModal({
           tags,
           createdAt,
           updatedAt: now,
+          accountId: accountId.trim() || undefined,
           content: notes,
           recoveryCodes: codes.length > 0 ? codes : undefined,
         } satisfies NoteItem;
@@ -295,6 +302,18 @@ export function ItemFormModal({
                     className="w-full rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
+                  ID (optional)
+                </label>
+                <input
+                  value={accountId}
+                  onChange={(e) => setAccountId(e.target.value)}
+                  placeholder="Account ID, Member ID, or Student/Employee ID"
+                  className="w-full rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                />
               </div>
 
               <div>
@@ -485,18 +504,32 @@ export function ItemFormModal({
           )}
 
           {category === 'note' && (
-            <div>
-              <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
-                Recovery Codes (optional, one per line)
-              </label>
-              <textarea
-                rows={3}
-                value={recoveryText}
-                onChange={(e) => setRecoveryText(e.target.value)}
-                placeholder={'8492 1938\n3301 7721'}
-                className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
+                  ID (optional)
+                </label>
+                <input
+                  value={accountId}
+                  onChange={(e) => setAccountId(e.target.value)}
+                  placeholder="Account ID or Reference ID"
+                  className="w-full rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
+                  Recovery Codes (optional, one per line)
+                </label>
+                <textarea
+                  rows={3}
+                  value={recoveryText}
+                  onChange={(e) => setRecoveryText(e.target.value)}
+                  placeholder={'8492 1938\n3301 7721'}
+                  className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                />
+              </div>
+            </>
           )}
 
           <div>

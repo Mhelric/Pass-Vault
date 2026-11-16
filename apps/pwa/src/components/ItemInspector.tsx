@@ -117,6 +117,7 @@ export function ItemInspector({
             {item.username && (
               <DetailField label="Username" value={item.username} onCopy={onCopySecret} />
             )}
+            {item.accountId && <DetailField label="ID" value={item.accountId} onCopy={onCopySecret} />}
             <DetailField
               label="Password"
               value={item.password}
@@ -180,6 +181,7 @@ export function ItemInspector({
 
         {item.category === 'note' && (
           <>
+            {item.accountId && <DetailField label="ID" value={item.accountId} onCopy={onCopySecret} />}
             <div className="rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-4 py-3">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-[11px] uppercase tracking-wider font-medium text-[var(--text-muted)]">

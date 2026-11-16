@@ -87,7 +87,7 @@ export function getPrimarySecret(item: DecryptedVaultItem): { label: string; val
 export function getItemSubtitle(item: DecryptedVaultItem): string {
   switch (item.category) {
     case 'login':
-      return item.email || item.username || item.urls[0] || 'Login credential';
+      return item.email || item.username || item.accountId || item.urls[0] || 'Login credential';
     case 'pin':
       return item.associatedAccount || 'PIN / Passcode';
     case 'card': {
@@ -95,8 +95,10 @@ export function getItemSubtitle(item: DecryptedVaultItem): string {
       return `${item.brand || 'Card'} •••• ${last4 || '••••'}`;
     }
     case 'note':
-      return item.recoveryCodes?.length
-        ? `${item.recoveryCodes.length} recovery codes`
-        : 'Secure note';
+      return item.accountId
+        ? item.accountId
+        : item.recoveryCodes?.length
+          ? `${item.recoveryCodes.length} recovery codes`
+          : 'Secure note';
   }
 }

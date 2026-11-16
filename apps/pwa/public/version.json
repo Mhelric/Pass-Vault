@@ -1,5 +1,5 @@
 {
-  "version": "1.0.5",
+  "version": "1.0.6",
   "apkUrl": "https://pass-vault-mhel.vercel.app/Pass-Vault.apk",
-  "notes": "Signed release APK for seamless in-place future updates."
+  "notes": "Added optional ID field for Login and Note items, plus favorites-first oldest-to-newest vault sorting."
 }

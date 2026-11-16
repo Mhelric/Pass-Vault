@@ -29,6 +29,7 @@ export interface LoginItem extends VaultItemBase {
   category: 'login';
   username?: string;
   email?: string;
+  accountId?: string;
   password: string;
   urls: string[];
   notes?: string;
@@ -63,6 +64,7 @@ export interface RecoveryCodeEntry {
 
 export interface NoteItem extends VaultItemBase {
   category: 'note';
+  accountId?: string;
   content: string;
   recoveryCodes?: RecoveryCodeEntry[];
 }

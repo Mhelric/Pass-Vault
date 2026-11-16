@@ -389,24 +389,35 @@ export function App() {
     const effectiveCategory = activeTab === 'pins' ? 'pin' : filter;
     const q = searchQuery.trim().toLowerCase();
 
-    return items.filter((item) => {
-      if (effectiveCategory === 'favorites' && !item.isFavorite) return false;
-      if (
-        effectiveCategory !== 'all' &&
-        effectiveCategory !== 'favorites' &&
-        item.category !== effectiveCategory
-      ) {
-        return false;
-      }
+    return items
+      .filter((item) => {
+        if (effectiveCategory === 'favorites' && !item.isFavorite) return false;
+        if (
+          effectiveCategory !== 'all' &&
+          effectiveCategory !== 'favorites' &&
+          item.category !== effectiveCategory
+        ) {
+          return false;
+        }
 
-      if (!q) return true;
-      const sub = getItemSubtitle(item).toLowerCase();
-      return (
-        item.title.toLowerCase().includes(q) ||
-        sub.includes(q) ||
-        item.tags.some((t) => t.toLowerCase().includes(q))
-      );
-    });
+        if (!q) return true;
+        const sub = getItemSubtitle(item).toLowerCase();
+        const accountIdMatch =
+          (item.category === 'login' || item.category === 'note') &&
+          (item.accountId ?? '').toLowerCase().includes(q);
+        return (
+          item.title.toLowerCase().includes(q) ||
+          sub.includes(q) ||
+          accountIdMatch ||
+          item.tags.some((t) => t.toLowerCase().includes(q))
+        );
+      })
+      .sort((a, b) => {
+        if (a.isFavorite !== b.isFavorite) {
+          return a.isFavorite ? -1 : 1;
+        }
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
   }, [items, activeTab, filter, searchQuery]);
 
   const selectedItem = useMemo(
