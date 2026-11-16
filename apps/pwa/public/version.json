@@ -1,5 +1,5 @@
 {
-  "version": "1.0.9",
+  "version": "1.0.10",
   "apkUrl": "https://pass-vault-mhel.vercel.app/Pass-Vault.apk",
-  "notes": "Added tag filter chips across desktop sidebar, mobile header, and item badges."
+  "notes": "Added optional PIN field to Login vault items."
 }

@@ -30,6 +30,7 @@ export interface LoginItem extends VaultItemBase {
   username?: string;
   email?: string;
   accountId?: string;
+  pin?: string;
   password: string;
   urls: string[];
   notes?: string;

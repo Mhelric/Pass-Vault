@@ -142,6 +142,7 @@ export function ItemInspector({
               <DetailField label="Username" value={item.username} onCopy={onCopySecret} />
             )}
             {item.accountId && <DetailField label="ID" value={item.accountId} onCopy={onCopySecret} />}
+            {item.pin && <DetailField label="PIN" value={item.pin} secret onCopy={onCopySecret} />}
             <DetailField
               label="Password"
               value={item.password}

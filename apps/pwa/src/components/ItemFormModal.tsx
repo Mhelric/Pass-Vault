@@ -56,6 +56,9 @@ export function ItemFormModal({
       ? (initialItem.accountId ?? '')
       : ''
   );
+  const [loginPin, setLoginPin] = useState(
+    initialItem?.category === 'login' ? (initialItem.pin ?? '') : ''
+  );
   const [password, setPassword] = useState(
     initialItem?.category === 'login'
       ? initialItem.password
@@ -154,6 +157,7 @@ export function ItemFormModal({
           email: email.trim() || undefined,
           username: username.trim() || undefined,
           accountId: accountId.trim() || undefined,
+          pin: loginPin.trim() || undefined,
           password,
           urls: urlsText
             .split(',')
@@ -311,16 +315,29 @@ export function ItemFormModal({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
-                  ID (optional)
-                </label>
-                <input
-                  value={accountId}
-                  onChange={(e) => setAccountId(e.target.value)}
-                  placeholder="Account ID, Member ID, or Student/Employee ID"
-                  className="w-full rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
+                    ID (optional)
+                  </label>
+                  <input
+                    value={accountId}
+                    onChange={(e) => setAccountId(e.target.value)}
+                    placeholder="Account ID, Member ID, etc."
+                    className="w-full rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
+                    PIN (optional)
+                  </label>
+                  <input
+                    value={loginPin}
+                    onChange={(e) => setLoginPin(e.target.value)}
+                    placeholder="e.g. 0482"
+                    className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                  />
+                </div>
               </div>
 
               <div>
