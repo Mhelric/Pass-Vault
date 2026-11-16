@@ -10,6 +10,8 @@ import { SecretInput } from '@vault/ui';
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Download,
   Fingerprint,
   HardDriveUpload,
@@ -61,11 +63,7 @@ export function SettingsView({
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const [backupError, setBackupError] = useState<string | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
-  const [installHint, setInstallHint] = useState<string | null>(null);
-  const isStandalone =
-    typeof window !== 'undefined' &&
-    (window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as { standalone?: boolean }).standalone === true);
+  const [healthExpanded, setHealthExpanded] = useState(false);
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -240,34 +238,32 @@ export function SettingsView({
 
         {pinMsg && <p className="text-xs text-emerald-300">{pinMsg}</p>}
 
-        <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
-              <Fingerprint className="w-4 h-4 text-[var(--accent-soft)]" />
-              <span>FaceID / Fingerprint Unlock</span>
-            </div>
-            <p className="text-xs text-[var(--text-muted)] mt-0.5">
-              {Capacitor.isNativePlatform()
-                ? bioHardwareSupported
+        {Capacitor.isNativePlatform() && (
+          <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
+                <Fingerprint className="w-4 h-4 text-[var(--accent-soft)]" />
+                <span>FaceID / Fingerprint Unlock</span>
+              </div>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                {bioHardwareSupported
                   ? 'Android BiometricPrompt + Keystore ready'
-                  : 'No fingerprint or face unlock enrolled in Android Settings'
-                : bioHardwareSupported
-                  ? 'Platform biometric authenticator detected'
-                  : 'Browser preview mode (WebAuthn ready on HTTPS mobile/desktop)'}
-            </p>
+                  : 'No fingerprint or face unlock enrolled in Android Settings'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleEnrollBiometrics()}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                hasBiometricsConfigured
+                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                  : 'bg-[var(--bg-surface)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:border-[var(--accent-primary)]'
+              }`}
+            >
+              {hasBiometricsConfigured ? 'Enabled' : 'Enable'}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => void handleEnrollBiometrics()}
-            className={`px-3.5 py-2 rounded-xl text-xs font-semibold border transition-all ${
-              hasBiometricsConfigured
-                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                : 'bg-[var(--bg-surface)] text-[var(--text-primary)] border-[var(--border-subtle)] hover:border-[var(--accent-primary)]'
-            }`}
-          >
-            {hasBiometricsConfigured ? 'Enabled' : 'Enable'}
-          </button>
-        </div>
+        )}
 
         <div className="pt-2 border-t border-[var(--border-subtle)] flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
@@ -289,12 +285,43 @@ export function SettingsView({
 
       {/* Offline Security Health */}
       <div className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-3">
-        <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
-          <ShieldCheck className="w-4 h-4 text-[var(--accent-soft)]" />
-          <span>Offline Vault Health</span>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
+            <ShieldCheck className="w-4 h-4 text-[var(--accent-soft)]" />
+            <span>Offline Vault Health</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setHealthExpanded((prev) => !prev)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--bg-surface)] hover:bg-white/10 border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-secondary)] transition-colors"
+          >
+            <span>{healthExpanded ? 'Hide Details' : 'Scan / Details'}</span>
+            {healthExpanded ? (
+              <ChevronUp className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5" />
+            )}
+          </button>
         </div>
 
-        {healthAudit.weakItems.length === 0 && healthAudit.reusedLogins.length === 0 ? (
+        {!healthExpanded ? (
+          healthAudit.weakItems.length === 0 && healthAudit.reusedLogins.length === 0 ? (
+            <div className="flex items-center gap-2 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3.5 py-2.5">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>All {items.length} vault items use unique, strong secrets.</span>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-2 text-xs text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3.5 py-2.5">
+              <span className="inline-flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>
+                  {healthAudit.weakItems.length + (healthAudit.reusedLogins.length > 0 ? 1 : 0)}{' '}
+                  security warning(s) found — tap Scan / Details to inspect.
+                </span>
+              </span>
+            </div>
+          )
+        ) : healthAudit.weakItems.length === 0 && healthAudit.reusedLogins.length === 0 ? (
           <div className="flex items-center gap-2 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-3.5 py-2.5">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             <span>All {items.length} vault items use unique, strong secrets.</span>
@@ -325,9 +352,9 @@ export function SettingsView({
         )}
       </div>
 
-      {/* Direct App Download / Install (Web only — hidden inside native APK) */}
+      {/* Direct APK Download (Web only — hidden inside native APK) */}
       {!Capacitor.isNativePlatform() && (
-        <div className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-3">
+        <div className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <Smartphone className="w-4 h-4 text-[var(--accent-soft)] shrink-0" />
@@ -336,49 +363,19 @@ export function SettingsView({
                   Download Pass-Vault App
                 </div>
                 <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                  Install Pass-Vault as a native Android APK or offline web app.
+                  Download the native Android APK for offline access.
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <a
-                href="/Pass-Vault.apk"
-                download="Pass-Vault.apk"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-xs font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.3)]"
-              >
-                <Download className="w-3.5 h-3.5" />
-                Download APK
-              </a>
-              {isStandalone ? (
-                <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                  Web App Installed
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setInstallHint(null);
-                    if (canInstallApp && onInstallApp) {
-                      void onInstallApp().then((accepted) => {
-                        if (!accepted) {
-                          setInstallHint('Install dismissed — tap Install Web App anytime to try again.');
-                        }
-                      });
-                    } else {
-                      setInstallHint(
-                        'On iPhone/iPad: tap Share -> Add to Home Screen. On Android/Desktop Chrome: open the browser menu -> Install app.'
-                      );
-                    }
-                  }}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-white/10 border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)]"
-                >
-                  <Smartphone className="w-3.5 h-3.5 text-[var(--accent-soft)]" />
-                  Install Web App
-                </button>
-              )}
-            </div>
+            <a
+              href="/Pass-Vault.apk"
+              download="Pass-Vault.apk"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-xs font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.3)] shrink-0"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Download APK
+            </a>
           </div>
-          {installHint && <p className="text-xs text-[var(--text-secondary)]">{installHint}</p>}
         </div>
       )}
 

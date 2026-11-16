@@ -146,11 +146,15 @@ export function LockOverlay({ aliasLabel }: LockOverlayProps) {
         className={`vault-scale-in w-full max-w-sm mx-auto ${showMasterForm ? 'mb-4' : 'mb-2'}`}
       >
         {!showMasterForm ? (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <PinKeypad
               onComplete={handlePinComplete}
-              onBiometric={hasBiometricsConfigured ? handleBiometricTrigger : undefined}
-              biometricAvailable={hasBiometricsConfigured}
+              onBiometric={
+                Capacitor.isNativePlatform() && hasBiometricsConfigured
+                  ? handleBiometricTrigger
+                  : undefined
+              }
+              biometricAvailable={Capacitor.isNativePlatform() && hasBiometricsConfigured}
               isSubmitting={isBusy}
               error={
                 localError ??

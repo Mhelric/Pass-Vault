@@ -1,5 +1,5 @@
 {
-  "version": "1.0.12",
+  "version": "1.0.13",
   "apkUrl": "https://pass-vault-mhel.vercel.app/Pass-Vault.apk",
-  "notes": "Made PIN and Passcode optional for SIM / PUK items."
+  "notes": "Centered fingerprint below 0, collapsible Vault Health details, and web-only cleanup."
 }
