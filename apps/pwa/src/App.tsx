@@ -1,3 +1,5 @@
+import { App as CapApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import {
   authenticateSupabaseVaultUser,
   type DecryptedVaultItem,
@@ -276,6 +278,14 @@ export function App() {
 
   useEffect(() => {
     if (isBooting) return;
+    if (Capacitor.isNativePlatform()) {
+      const listenerPromise = CapApp.addListener('backButton', () => {
+        backHandlerRef.current();
+      });
+      return () => {
+        void listenerPromise.then((handle) => handle.remove());
+      };
+    }
     if (!(window.history.state as { passVaultRoot?: boolean; passVaultGuard?: boolean } | null)?.passVaultRoot &&
         !(window.history.state as { passVaultGuard?: boolean } | null)?.passVaultGuard) {
       window.history.replaceState({ passVaultRoot: true }, '');
@@ -569,6 +579,10 @@ export function App() {
               setExitConfirmOpen(false);
               if (lockState === 'unlocked') {
                 lockVault();
+              }
+              if (Capacitor.isNativePlatform()) {
+                void CapApp.exitApp();
+                return;
               }
               window.close();
               window.history.go(-2);

@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import {
   exportEncryptedVaultBackup,
   restoreEncryptedVaultBackup,
@@ -304,7 +305,7 @@ export function SettingsView({
 
       {/* Direct App Download / Install */}
       <div className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-3">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <Smartphone className="w-4 h-4 text-[var(--accent-soft)] shrink-0" />
             <div>
@@ -312,36 +313,53 @@ export function SettingsView({
                 Download Pass-Vault App
               </div>
               <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                Install Pass-Vault directly on your phone or desktop for offline access.
+                Install Pass-Vault as a native Android APK or offline web app.
               </p>
             </div>
           </div>
-          {isStandalone ? (
-            <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0">
-              Installed
+          {Capacitor.isNativePlatform() ? (
+            <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0 self-start sm:self-center">
+              Android App Active
             </span>
           ) : (
-            <button
-              type="button"
-              onClick={() => {
-                setInstallHint(null);
-                if (canInstallApp && onInstallApp) {
-                  void onInstallApp().then((accepted) => {
-                    if (!accepted) {
-                      setInstallHint('Install dismissed — tap Download App anytime to try again.');
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <a
+                href="https://github.com/Mhelric/password-manager/releases/latest/download/Pass-Vault.apk"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-xs font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.3)]"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download APK
+              </a>
+              {isStandalone ? (
+                <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  Web App Installed
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInstallHint(null);
+                    if (canInstallApp && onInstallApp) {
+                      void onInstallApp().then((accepted) => {
+                        if (!accepted) {
+                          setInstallHint('Install dismissed — tap Install Web App anytime to try again.');
+                        }
+                      });
+                    } else {
+                      setInstallHint(
+                        'On iPhone/iPad: tap Share -> Add to Home Screen. On Android/Desktop Chrome: open the browser menu -> Install app.'
+                      );
                     }
-                  });
-                } else {
-                  setInstallHint(
-                    'On iPhone/iPad: tap Share -> Add to Home Screen. On Android/Desktop Chrome: open the browser menu -> Install app.'
-                  );
-                }
-              }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-xs font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.3)] shrink-0"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Download App
-            </button>
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[var(--bg-surface)] hover:bg-white/10 border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)]"
+                >
+                  <Smartphone className="w-3.5 h-3.5 text-[var(--accent-soft)]" />
+                  Install Web App
+                </button>
+              )}
+            </div>
           )}
         </div>
         {installHint && <p className="text-xs text-[var(--text-secondary)]">{installHint}</p>}
