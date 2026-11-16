@@ -33,7 +33,9 @@ jobs:
           java-version: '17'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          npm install --no-save lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu @rollup/rollup-linux-x64-gnu
 
       - name: Build PWA bundle
         env:
