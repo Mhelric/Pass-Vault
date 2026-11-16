@@ -9,6 +9,7 @@ import { CategoryBadge, CopyButton, SecretInput } from '@vault/ui';
 import {
   Command,
   CreditCard,
+  Download,
   FileText,
   FileUp,
   Hash,
@@ -25,6 +26,12 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  APP_VERSION,
+  isNewerVersion,
+  VERSION_MANIFEST_URL,
+  type RemoteVersionManifest,
+} from './appVersion.js';
 import { CommandPalette } from './components/CommandPalette.js';
 import { GeneratorView } from './components/GeneratorView.js';
 import { ImportView } from './components/ImportView.js';
@@ -97,6 +104,28 @@ export function App() {
   const [installPrompt, setInstallPrompt] = useState<
     (Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }) | null
   >(null);
+  const [availableUpdate, setAvailableUpdate] = useState<RemoteVersionManifest | null>(null);
+
+  useEffect(() => {
+    if (isBooting) return;
+    let cancelled = false;
+    void fetch(`${VERSION_MANIFEST_URL}?t=${Date.now()}`, { cache: 'no-store' })
+      .then((res) => (res.ok ? (res.json() as Promise<RemoteVersionManifest>) : null))
+      .then((manifest) => {
+        if (cancelled || !manifest?.version) return;
+        const dismissed = sessionStorage.getItem('pass_vault_dismissed_update');
+        if (dismissed === manifest.version) return;
+        if (isNewerVersion(manifest.version, APP_VERSION)) {
+          setAvailableUpdate(manifest);
+        }
+      })
+      .catch(() => {
+        // Offline or unreachable; silently skip update check
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isBooting]);
 
   useEffect(() => {
     const onBeforeInstall = (e: Event) => {
@@ -525,6 +554,70 @@ export function App() {
     });
   };
 
+  const updateAvailableModal = availableUpdate ? (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+      onClick={() => {
+        sessionStorage.setItem('pass_vault_dismissed_update', availableUpdate.version);
+        setAvailableUpdate(null);
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="update-vault-title"
+        className="vault-scale-in w-full max-w-sm rounded-2xl bg-[var(--bg-elevated)] border border-[var(--accent-primary)]/45 p-5 space-y-4 shadow-[0_16px_48px_rgba(0,0,0,0.75)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shrink-0">
+            <Download className="w-5 h-5 text-[var(--accent-soft)]" />
+          </div>
+          <div>
+            <h2 id="update-vault-title" className="text-sm font-bold text-[var(--text-primary)]">
+              Update Available (v{availableUpdate.version})
+            </h2>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">
+              {availableUpdate.notes ?? `A newer version of Pass-Vault is ready (current v${APP_VERSION}).`}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2.5 pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              sessionStorage.setItem('pass_vault_dismissed_update', availableUpdate.version);
+              setAvailableUpdate(null);
+            }}
+            className="py-2.5 px-3 rounded-xl bg-[var(--bg-surface)] hover:bg-white/10 border border-[var(--border-subtle)] text-xs font-semibold text-[var(--text-primary)]"
+          >
+            Later
+          </button>
+          {Capacitor.isNativePlatform() ? (
+            <a
+              href={availableUpdate.apkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setAvailableUpdate(null)}
+              className="py-2.5 px-3 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-xs font-semibold text-white text-center shadow-[0_0_16px_rgba(139,92,246,0.35)]"
+            >
+              Download Update
+            </a>
+          ) : (
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="py-2.5 px-3 rounded-xl bg-[var(--accent-primary)] hover:bg-[var(--accent-hover)] text-xs font-semibold text-white shadow-[0_0_16px_rgba(139,92,246,0.35)]"
+            >
+              Reload App
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   const exitConfirmModal = exitConfirmOpen ? (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
@@ -760,6 +853,7 @@ export function App() {
             </div>
           </form>
         </div>
+        {updateAvailableModal}
         {exitConfirmModal}
       </div>
     );
@@ -770,6 +864,7 @@ export function App() {
     return (
       <>
         <LockOverlay aliasLabel={prefs.aliasLabel} isDemoMode={prefs.isDemoMode} />
+        {updateAvailableModal}
         {exitConfirmModal}
       </>
     );
@@ -1375,7 +1470,8 @@ export function App() {
         onCopySecret={triggerClipboardCountdown}
       />
 
-      {/* Exit App Confirmation Modal (when pressing Back on any root view) */}
+      {/* Update & Exit Confirmation Modals */}
+      {updateAvailableModal}
       {exitConfirmModal}
     </div>
   );
