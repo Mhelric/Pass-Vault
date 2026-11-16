@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "apkUrl": "https://pass-vault-mhel.vercel.app/Pass-Vault.apk",
-  "notes": "Latest Pass-Vault build with UI and security improvements."
+  "notes": "Fixed Android status bar spacing and centered lock screen layout."
 }

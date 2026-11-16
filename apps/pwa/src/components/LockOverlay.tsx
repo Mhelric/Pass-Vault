@@ -88,9 +88,13 @@ export function LockOverlay({ aliasLabel }: LockOverlayProps) {
   };
 
   return (
-    <div className="vault-fade-in fixed inset-0 z-50 flex flex-col justify-end bg-[var(--bg-primary)] px-6 pt-12 pb-8 overflow-y-auto">
+    <div
+      className={`vault-fade-in fixed inset-0 z-50 flex flex-col bg-[var(--bg-primary)] px-6 overflow-y-auto ${
+        showMasterForm ? 'justify-center py-8' : 'justify-between pt-14 pb-6'
+      }`}
+    >
       {/* Vault Status Emblem */}
-      <div className="flex flex-col items-center text-center mb-7">
+      <div className={`flex flex-col items-center text-center ${showMasterForm ? 'mb-6' : 'mt-2 mb-4'}`}>
         <div
           className={`w-16 h-16 rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shadow-[0_0_32px_rgba(139,92,246,0.28)] mb-4 transition-all ${
             isBusy ? 'vault-shield-pulse' : ''
@@ -120,7 +124,10 @@ export function LockOverlay({ aliasLabel }: LockOverlayProps) {
       </div>
 
       {/* Thumb-zone PIN Pad or Master Password Gate */}
-      <div key={showMasterForm ? 'master' : 'pin'} className="vault-scale-in w-full max-w-sm mx-auto mb-5">
+      <div
+        key={showMasterForm ? 'master' : 'pin'}
+        className={`vault-scale-in w-full max-w-sm mx-auto ${showMasterForm ? 'mb-4' : 'mb-2'}`}
+      >
         {!showMasterForm ? (
           <div className="space-y-6">
             <PinKeypad
