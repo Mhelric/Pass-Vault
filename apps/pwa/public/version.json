@@ -1,5 +1,5 @@
 {
-  "version": "1.0.11",
+  "version": "1.0.12",
   "apkUrl": "https://pass-vault-mhel.vercel.app/Pass-Vault.apk",
-  "notes": "Removed sidebar tag clutter and added #tag search directly in Filter items."
+  "notes": "Made PIN and Passcode optional for SIM / PUK items."
 }

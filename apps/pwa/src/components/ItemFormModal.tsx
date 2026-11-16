@@ -167,7 +167,7 @@ export function ItemFormModal({
           passwordHistory: previousHistory.slice(0, 10),
         } satisfies LoginItem;
       } else if (category === 'pin') {
-        if (!pinCode.trim() && !passcode.trim()) {
+        if (pinType !== 'sim_puk' && !pinCode.trim() && !passcode.trim()) {
           return;
         }
         nextItem = {
@@ -395,7 +395,7 @@ export function ItemFormModal({
                     </button>
                   </div>
                   <input
-                    required={!passcode.trim()}
+                    required={pinType !== 'sim_puk' && !passcode.trim()}
                     value={pinCode}
                     onChange={(e) => setPinCode(e.target.value)}
                     placeholder="e.g. 0482"
@@ -417,7 +417,7 @@ export function ItemFormModal({
                     </button>
                   </div>
                   <input
-                    required={!pinCode.trim()}
+                    required={pinType !== 'sim_puk' && !pinCode.trim()}
                     value={passcode}
                     onChange={(e) => setPasscode(e.target.value)}
                     placeholder="e.g. 849201"
