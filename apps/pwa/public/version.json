@@ -1,5 +1,5 @@
 {
-  "version": "1.0.6",
+  "version": "1.0.7",
   "apkUrl": "https://pass-vault-mhel.vercel.app/Pass-Vault.apk",
-  "notes": "Added optional ID field for Login and Note items, plus favorites-first oldest-to-newest vault sorting."
+  "notes": "Added Clear History and per-entry delete for Login password history."
 }

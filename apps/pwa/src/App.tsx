@@ -565,6 +565,24 @@ export function App() {
     });
   };
 
+  const handleDeletePasswordHistoryEntry = async (item: DecryptedVaultItem, entryIndex: number) => {
+    if (item.category !== 'login') return;
+    await saveItem({
+      ...item,
+      passwordHistory: item.passwordHistory.filter((_, idx) => idx !== entryIndex),
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
+  const handleClearPasswordHistory = async (item: DecryptedVaultItem) => {
+    if (item.category !== 'login') return;
+    await saveItem({
+      ...item,
+      passwordHistory: [],
+      updatedAt: new Date().toISOString(),
+    });
+  };
+
   const updateAvailableModal = availableUpdate ? (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
@@ -1334,6 +1352,8 @@ export function App() {
                     onToggleFavorite={handleToggleFavorite}
                     onDelete={handleDelete}
                     onToggleRecoveryCode={handleToggleRecoveryCode}
+                    onDeletePasswordHistoryEntry={handleDeletePasswordHistoryEntry}
+                    onClearPasswordHistory={handleClearPasswordHistory}
                   />
                 </div>
               ) : (
@@ -1378,6 +1398,8 @@ export function App() {
               onToggleFavorite={handleToggleFavorite}
               onDelete={handleDelete}
               onToggleRecoveryCode={handleToggleRecoveryCode}
+              onDeletePasswordHistoryEntry={handleDeletePasswordHistoryEntry}
+              onClearPasswordHistory={handleClearPasswordHistory}
             />
           </div>
         </div>

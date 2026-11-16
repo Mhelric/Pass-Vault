@@ -9,6 +9,8 @@ export interface ItemInspectorProps {
   onToggleFavorite: (item: DecryptedVaultItem) => Promise<void>;
   onDelete: (item: DecryptedVaultItem) => Promise<void>;
   onToggleRecoveryCode?: (item: DecryptedVaultItem, codeIndex: number) => Promise<void>;
+  onDeletePasswordHistoryEntry?: (item: DecryptedVaultItem, entryIndex: number) => Promise<void>;
+  onClearPasswordHistory?: (item: DecryptedVaultItem) => Promise<void>;
 }
 
 const PIN_LABELS: Record<PinType, string> = {
@@ -55,6 +57,8 @@ export function ItemInspector({
   onToggleFavorite,
   onDelete,
   onToggleRecoveryCode,
+  onDeletePasswordHistoryEntry,
+  onClearPasswordHistory,
 }: ItemInspectorProps) {
   return (
     <div className="space-y-4">
@@ -244,17 +248,41 @@ export function ItemInspector({
         )}
 
         {item.category === 'login' && item.passwordHistory.length > 0 && (
-          <div className="rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-4 py-3 space-y-2">
-            <div className="text-[11px] uppercase tracking-wider font-medium text-[var(--text-muted)]">
-              Password History ({item.passwordHistory.length})
+          <div className="rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-4 py-3 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-[11px] uppercase tracking-wider font-medium text-[var(--text-muted)]">
+                Password History ({item.passwordHistory.length})
+              </div>
+              {onClearPasswordHistory && (
+                <button
+                  type="button"
+                  onClick={() => void onClearPasswordHistory(item)}
+                  className="text-[11px] font-medium text-red-300/80 hover:text-red-300 transition-colors"
+                >
+                  Clear History
+                </button>
+              )}
             </div>
             {item.passwordHistory.map((hist, idx) => (
               <div
-                key={idx}
+                key={`${hist.changedAt}-${idx}`}
                 className="flex items-center justify-between gap-2 text-xs text-[var(--text-muted)]"
               >
                 <SecretDisplay value={hist.password} />
-                <span>{new Date(hist.changedAt).toLocaleDateString()}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span>{new Date(hist.changedAt).toLocaleDateString()}</span>
+                  {onDeletePasswordHistoryEntry && (
+                    <button
+                      type="button"
+                      onClick={() => void onDeletePasswordHistoryEntry(item, idx)}
+                      aria-label="Delete password history entry"
+                      title="Delete entry"
+                      className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--status-danger)] hover:bg-red-500/10 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
