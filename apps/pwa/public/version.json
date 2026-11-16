@@ -1,5 +1,5 @@
 {
-  "version": "1.0.7",
+  "version": "1.0.8",
   "apkUrl": "https://pass-vault-mhel.vercel.app/Pass-Vault.apk",
-  "notes": "Added Clear History and per-entry delete for Login password history."
+  "notes": "Added dedicated PIN and Passcode fields for PIN vault items."
 }

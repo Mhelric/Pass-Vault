@@ -39,6 +39,7 @@ export interface LoginItem extends VaultItemBase {
 export interface PinItem extends VaultItemBase {
   category: 'pin';
   pinCode: string; // String preserves leading zeros (e.g., "0482")
+  passcode?: string;
   pinType: PinType;
   associatedAccount?: string;
   notes?: string;

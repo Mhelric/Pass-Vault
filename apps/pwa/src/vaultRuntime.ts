@@ -75,7 +75,9 @@ export function getPrimarySecret(item: DecryptedVaultItem): { label: string; val
     case 'login':
       return { label: 'Password', value: item.password };
     case 'pin':
-      return { label: 'PIN', value: item.pinCode };
+      return item.pinCode
+        ? { label: 'PIN', value: item.pinCode }
+        : { label: 'Passcode', value: item.passcode ?? '' };
     case 'card':
       return { label: 'Card Number', value: item.cardNumber };
     case 'note':

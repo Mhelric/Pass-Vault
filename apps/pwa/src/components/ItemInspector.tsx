@@ -152,7 +152,12 @@ export function ItemInspector({
 
         {item.category === 'pin' && (
           <>
-            <DetailField label="PIN / Passcode" value={item.pinCode} secret onCopy={onCopySecret} />
+            {item.pinCode && (
+              <DetailField label="PIN" value={item.pinCode} secret onCopy={onCopySecret} />
+            )}
+            {item.passcode && (
+              <DetailField label="Passcode" value={item.passcode} secret onCopy={onCopySecret} />
+            )}
             <DetailField label="Type" value={PIN_LABELS[item.pinType]} />
             {item.associatedAccount && (
               <DetailField label="Account / Device" value={item.associatedAccount} />

@@ -75,6 +75,9 @@ export function ItemFormModal({
         ? prefillSecret
         : ''
   );
+  const [passcode, setPasscode] = useState(
+    initialItem?.category === 'pin' ? (initialItem.passcode ?? '') : ''
+  );
   const [pinType, setPinType] = useState<PinType>(
     initialItem?.category === 'pin' ? initialItem.pinType : 'bank_atm'
   );
@@ -160,6 +163,9 @@ export function ItemFormModal({
           passwordHistory: previousHistory.slice(0, 10),
         } satisfies LoginItem;
       } else if (category === 'pin') {
+        if (!pinCode.trim() && !passcode.trim()) {
+          return;
+        }
         nextItem = {
           id,
           category: 'pin',
@@ -169,6 +175,7 @@ export function ItemFormModal({
           createdAt,
           updatedAt: now,
           pinCode: pinCode.trim(),
+          passcode: passcode.trim() || undefined,
           pinType,
           associatedAccount: associatedAccount.trim() || undefined,
           notes: notes.trim() || undefined,
@@ -359,7 +366,7 @@ export function ItemFormModal({
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-medium text-[var(--text-muted)]">
-                      PIN / Passcode *
+                      PIN
                     </label>
                     <button
                       type="button"
@@ -371,7 +378,7 @@ export function ItemFormModal({
                     </button>
                   </div>
                   <input
-                    required
+                    required={!passcode.trim()}
                     value={pinCode}
                     onChange={(e) => setPinCode(e.target.value)}
                     placeholder="e.g. 0482"
@@ -379,21 +386,44 @@ export function ItemFormModal({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
-                    PIN Category
-                  </label>
-                  <select
-                    value={pinType}
-                    onChange={(e) => setPinType(e.target.value as PinType)}
-                    className="w-full rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
-                  >
-                    {PIN_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-medium text-[var(--text-muted)]">
+                      Passcode
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setPasscode(generatePin({ length: 6 }))}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-[var(--accent-soft)] hover:text-white"
+                    >
+                      <Wand2 className="w-3.5 h-3.5" />
+                      Random
+                    </button>
+                  </div>
+                  <input
+                    required={!pinCode.trim()}
+                    value={passcode}
+                    onChange={(e) => setPasscode(e.target.value)}
+                    placeholder="e.g. 849201"
+                    className="w-full font-mono-secret rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                  />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-[var(--text-muted)] mb-1.5">
+                  PIN Category
+                </label>
+                <select
+                  value={pinType}
+                  onChange={(e) => setPinType(e.target.value as PinType)}
+                  className="w-full rounded-xl bg-[var(--bg-surface)] border border-[var(--border-subtle)] px-3.5 py-2.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-primary)]"
+                >
+                  {PIN_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
