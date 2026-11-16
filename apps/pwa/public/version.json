@@ -1,5 +1,5 @@
 {
-  "version": "1.0.3",
+  "version": "1.0.4",
   "apkUrl": "https://pass-vault-mhel.vercel.app/Pass-Vault.apk",
-  "notes": "Added native Android Fingerprint & Face Unlock (BiometricPrompt + Keystore)."
+  "notes": "Fixed blank space above the Android keyboard when typing."
 }

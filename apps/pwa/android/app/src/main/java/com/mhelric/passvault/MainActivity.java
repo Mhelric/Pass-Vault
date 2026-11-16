@@ -34,7 +34,6 @@ public class MainActivity extends BridgeActivity {
                     WindowInsetsCompat.Type.statusBars()
                         | WindowInsetsCompat.Type.navigationBars()
                         | WindowInsetsCompat.Type.displayCutout()
-                        | WindowInsetsCompat.Type.ime()
                 );
                 v.setPadding(insets.left, insets.top, insets.right, insets.bottom);
                 return WindowInsetsCompat.CONSUMED;
