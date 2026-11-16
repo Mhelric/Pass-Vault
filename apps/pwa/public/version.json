@@ -1,5 +1,5 @@
 {
-  "version": "1.0.4",
+  "version": "1.0.5",
   "apkUrl": "https://pass-vault-mhel.vercel.app/Pass-Vault.apk",
-  "notes": "Fixed blank space above the Android keyboard when typing."
+  "notes": "Signed release APK for seamless in-place future updates."
 }
