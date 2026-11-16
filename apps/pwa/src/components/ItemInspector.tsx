@@ -11,6 +11,8 @@ export interface ItemInspectorProps {
   onToggleRecoveryCode?: (item: DecryptedVaultItem, codeIndex: number) => Promise<void>;
   onDeletePasswordHistoryEntry?: (item: DecryptedVaultItem, entryIndex: number) => Promise<void>;
   onClearPasswordHistory?: (item: DecryptedVaultItem) => Promise<void>;
+  selectedTag?: string | null;
+  onSelectTag?: (tag: string) => void;
 }
 
 const PIN_LABELS: Record<PinType, string> = {
@@ -59,6 +61,8 @@ export function ItemInspector({
   onToggleRecoveryCode,
   onDeletePasswordHistoryEntry,
   onClearPasswordHistory,
+  selectedTag,
+  onSelectTag,
 }: ItemInspectorProps) {
   return (
     <div className="space-y-4">
@@ -67,14 +71,30 @@ export function ItemInspector({
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1.5">
             <CategoryBadge category={item.category} />
-            {item.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2 py-0.5 rounded-full text-[11px] bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-subtle)]"
-              >
-                #{tag}
-              </span>
-            ))}
+            {item.tags.map((tag) => {
+              const active = selectedTag?.toLowerCase() === tag.toLowerCase();
+              return onSelectTag ? (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => onSelectTag(tag)}
+                  className={`px-2 py-0.5 rounded-full text-[11px] border transition-colors ${
+                    active
+                      ? 'bg-[var(--accent-primary)] text-white border-[var(--accent-primary)]'
+                      : 'bg-[var(--bg-surface)] text-[var(--text-muted)] border-[var(--border-subtle)] hover:text-white'
+                  }`}
+                >
+                  #{tag}
+                </button>
+              ) : (
+                <span
+                  key={tag}
+                  className="px-2 py-0.5 rounded-full text-[11px] bg-[var(--bg-surface)] text-[var(--text-muted)] border border-[var(--border-subtle)]"
+                >
+                  #{tag}
+                </span>
+              );
+            })}
           </div>
           <h2 className="text-xl font-bold text-[var(--text-primary)] break-words">
             {item.title}
