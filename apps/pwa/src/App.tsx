@@ -744,16 +744,16 @@ export function App() {
   // 1. Auth / Onboarding Gate
   if (lockState === 'unauthenticated' || !userId) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-[var(--bg-primary)] flex items-center justify-center px-4 py-10">
+      <div className="relative min-h-dvh w-full overflow-hidden bg-[var(--bg-primary)] flex items-center justify-center px-4 py-10">
         <img
           src="/signin-bg.gif"
           alt=""
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30"
+          className="pointer-events-none fixed inset-0 h-full w-full object-cover scale-105 opacity-75"
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#09090b]/75 via-[#120d1f]/65 to-[#09090b]/90"
+          className="pointer-events-none fixed inset-0 bg-gradient-to-b from-[#09090b]/45 via-[#120d1f]/35 to-[#09090b]/60"
         />
         <div className="vault-fade-in relative z-10 w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
