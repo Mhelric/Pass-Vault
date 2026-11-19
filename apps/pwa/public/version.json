@@ -1,5 +1,5 @@
 {
-  "version": "1.0.13",
+  "version": "1.0.14",
   "apkUrl": "https://pass-vault-mhel.vercel.app/Pass-Vault.apk",
-  "notes": "Centered fingerprint below 0, collapsible Vault Health details, and web-only cleanup."
+  "notes": "Added archival cyber/mainframe background GIF exclusively on the Sign In page."
 }

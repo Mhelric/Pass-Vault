@@ -744,10 +744,20 @@ export function App() {
   // 1. Auth / Onboarding Gate
   if (lockState === 'unauthenticated' || !userId) {
     return (
-      <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center px-4 py-10">
-        <div className="vault-fade-in w-full max-w-md space-y-6">
+      <div className="relative min-h-screen overflow-hidden bg-[var(--bg-primary)] flex items-center justify-center px-4 py-10">
+        <img
+          src="/signin-bg.gif"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-30"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#09090b]/75 via-[#120d1f]/65 to-[#09090b]/90"
+        />
+        <div className="vault-fade-in relative z-10 w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shadow-[0_0_36px_rgba(139,92,246,0.3)]">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shadow-[0_0_36px_rgba(139,92,246,0.3)] backdrop-blur-sm">
               <Shield className="w-8 h-8 text-[var(--accent-soft)]" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
@@ -761,7 +771,7 @@ export function App() {
           {/* Sign In or Create Encrypted Vault */}
           <form
             onSubmit={(e) => void handleAuthSubmit(e)}
-            className="relative overflow-hidden rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5"
+            className="relative overflow-hidden rounded-2xl bg-[var(--bg-elevated)]/90 backdrop-blur-md border border-[var(--border-subtle)] p-5 shadow-2xl"
           >
             {authBusy && (
               <div className="vault-fade-in absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-2xl bg-[var(--bg-elevated)]/90 backdrop-blur-sm px-6 text-center">

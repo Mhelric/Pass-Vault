@@ -10,7 +10,7 @@ Built with a Deep Obsidian (`#09090B`) & Electric Purple (`#8B5CF6`) design syst
 
 <p>
   <a href="https://pass-vault-mhel.vercel.app/Pass-Vault.apk">
-    <img src="https://img.shields.io/badge/Download_Android_APK-v1.0.13-8B5CF6?style=for-the-badge&logo=android&logoColor=white" alt="Download Android APK" />
+    <img src="https://img.shields.io/badge/Download_Android_APK-v1.0.14-8B5CF6?style=for-the-badge&logo=android&logoColor=white" alt="Download Android APK" />
   </a>
   <a href="https://pass-vault-mhel.vercel.app">
     <img src="https://img.shields.io/badge/Open_Web_App-pass--vault--mhel.vercel.app-18181B?style=for-the-badge&logo=vercel&logoColor=C084FC" alt="Open Web App" />
@@ -104,14 +104,17 @@ npm run build
 
 ## 📋 Release Notes
 
-### 🟣 Latest — `v1.0.13`
+### 🟣 Latest — `v1.0.14`
+- Added an archival cyber/mainframe background GIF (`signin-bg.gif` sourced from Destockd) exclusively on the Sign In page with a Deep Obsidian + Electric Purple scrim.
+
+<details>
+<summary><strong>Previous Releases (v1.0.1 – v1.0.13)</strong></summary>
+
+#### `v1.0.13`
 - Hid **FaceID / Fingerprint Unlock** settings and lock-screen trigger on the web app (shown in the native Android APK only).
 - Added a **Scan / Details** expander toggle to **Offline Vault Health** in Settings (collapsed by default).
 - Removed the redundant **Install Web App** button, leaving the direct **Download APK** button on the website.
 - Centered the **Fingerprint** unlock button directly below `0` and above **Unlock with Master Password instead** with balanced spacing.
-
-<details>
-<summary><strong>Previous Releases (v1.0.1 – v1.0.12)</strong></summary>
 
 #### `v1.0.12`
 - Made **PIN** and **Passcode** optional when **PIN Category** is set to `SIM / PUK`.
