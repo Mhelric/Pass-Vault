@@ -2,7 +2,7 @@ import { Capacitor } from '@capacitor/core';
 import { MAX_PIN_ATTEMPTS } from '@vault/core';
 import { PinKeypad, SecretInput, VaultLogo } from '@vault/ui';
 import { KeyRound, ShieldAlert } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { DEMO_BIO_SECRET_STORAGE_KEY } from '../demoSeed.js';
 import { authenticateNativeBiometric } from '../nativeBiometric.js';
 import { saveUiPreferences, useVault } from '../vaultRuntime.js';
@@ -63,7 +63,7 @@ export function LockOverlay({ aliasLabel, bgGifIndex }: LockOverlayProps) {
     }
   };
 
-  const handleBiometricTrigger = async () => {
+  const handleBiometricTrigger = useCallback(async () => {
     setLocalError(null);
     if (Capacitor.isNativePlatform()) {
       if (!userId) return;
@@ -100,7 +100,23 @@ export function LockOverlay({ aliasLabel, bgGifIndex }: LockOverlayProps) {
     } finally {
       setIsBusy(false);
     }
-  };
+  }, [unlockWithBiometrics, userId]);
+
+  const autoBiometricTriggeredRef = useRef(false);
+  useEffect(() => {
+    if (
+      autoBiometricTriggeredRef.current ||
+      !Capacitor.isNativePlatform() ||
+      !hasBiometricsConfigured ||
+      showMasterForm ||
+      lockState !== 'locked' ||
+      !userId
+    ) {
+      return;
+    }
+    autoBiometricTriggeredRef.current = true;
+    void handleBiometricTrigger();
+  }, [handleBiometricTrigger, hasBiometricsConfigured, lockState, showMasterForm, userId]);
 
   const handleMasterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,8 +135,8 @@ export function LockOverlay({ aliasLabel, bgGifIndex }: LockOverlayProps) {
 
   return (
     <div
-      className={`vault-fade-in fixed inset-0 z-50 flex flex-col bg-[var(--bg-primary)] px-6 overflow-y-auto overflow-x-hidden ${
-        showMasterForm ? 'justify-center py-8' : 'justify-between pt-14 pb-6'
+      className={`vault-fade-in fixed inset-0 z-50 flex flex-col bg-[var(--bg-primary)] px-6 overflow-x-hidden ${
+        showMasterForm ? 'justify-center py-8 overflow-y-auto' : 'justify-between pt-14 pb-6 overflow-hidden'
       }`}
     >
       <VaultBackground activeIndex={activeBgIndex} />

@@ -1,5 +1,5 @@
 {
-  "version": "1.0.20",
+  "version": "1.0.21",
   "apkUrl": "https://github.com/Mhelric/password-manager/releases/download/android-latest/Pass-Vault.apk",
-  "notes": "New neon padlock-shield logo across app, Android, extension & web, plus direct APK update download."
+  "notes": "Fingerprint button moved beside 0, auto biometric prompt on app open, and a non-scrollable PIN screen."
 }

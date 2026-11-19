@@ -119,8 +119,21 @@ export function PinKeypad({
           </button>
         ))}
 
-        {/* Bottom-left spacer */}
-        <div className="h-16 w-16" aria-hidden="true" />
+        {/* Bottom-left: Biometrics trigger beside 0 */}
+        {biometricAvailable && onBiometric ? (
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={() => void onBiometric()}
+            aria-label="Unlock with FaceID or Fingerprint"
+            title="Unlock with Biometrics"
+            className="h-16 w-16 mx-auto rounded-full bg-[var(--accent-tint)]/80 backdrop-blur-md border border-[var(--accent-primary)]/40 text-[var(--accent-soft)] flex items-center justify-center shadow-[0_0_24px_rgba(139,92,246,0.3)] hover:bg-[var(--accent-primary)]/30 active:scale-95 transition-all disabled:opacity-50"
+          >
+            <Fingerprint className="w-6 h-6" />
+          </button>
+        ) : (
+          <div className="h-16 w-16" aria-hidden="true" />
+        )}
 
         {/* Bottom-center: 0 */}
         <button
@@ -143,20 +156,6 @@ export function PinKeypad({
           <Delete className="w-6 h-6" />
         </button>
       </div>
-
-      {/* Centered Biometrics trigger below 0 */}
-      {biometricAvailable && onBiometric && (
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={() => void onBiometric()}
-          aria-label="Unlock with FaceID or Fingerprint"
-          title="Unlock with Biometrics"
-          className="mt-5 h-14 w-14 rounded-full bg-[var(--accent-tint)]/80 backdrop-blur-md border border-[var(--accent-primary)]/40 text-[var(--accent-soft)] flex items-center justify-center shadow-[0_0_24px_rgba(139,92,246,0.3)] hover:bg-[var(--accent-primary)]/30 active:scale-95 transition-all disabled:opacity-50"
-        >
-          <Fingerprint className="w-6 h-6" />
-        </button>
-      )}
     </div>
   );
 }
