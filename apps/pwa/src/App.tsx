@@ -5,7 +5,7 @@ import {
   type DecryptedVaultItem,
   type VaultCategory,
 } from '@vault/core';
-import { CategoryBadge, CopyButton, SecretInput } from '@vault/ui';
+import { CategoryBadge, CopyButton, SecretInput, VaultLogo } from '@vault/ui';
 import {
   Command,
   CreditCard,
@@ -735,7 +735,7 @@ export function App() {
       <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center px-4">
         <div className="vault-fade-in flex flex-col items-center text-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center vault-shield-pulse">
-            <Shield className="w-8 h-8 text-[var(--accent-soft)]" />
+            <VaultLogo className="w-9 h-9" />
           </div>
           <div className="space-y-1">
             <h1 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
@@ -759,7 +759,7 @@ export function App() {
         <div className="vault-fade-in relative z-10 w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
             <div className="w-16 h-16 mx-auto rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shadow-[0_0_36px_rgba(139,92,246,0.3)] backdrop-blur-sm">
-              <Shield className="w-8 h-8 text-[var(--accent-soft)]" />
+              <VaultLogo className="w-9 h-9" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
               Pass-Vault
@@ -777,7 +777,7 @@ export function App() {
             {authBusy && (
               <div className="vault-fade-in absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-2xl bg-[var(--bg-elevated)]/90 backdrop-blur-sm px-6 text-center">
                 <div className="w-12 h-12 rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center vault-shield-pulse">
-                  <Shield className="w-6 h-6 text-[var(--accent-soft)]" />
+                  <VaultLogo className="w-7 h-7" />
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-[var(--text-primary)]">
@@ -954,7 +954,7 @@ export function App() {
               aria-label="Expand sidebar"
               className="w-9 h-9 rounded-xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center hover:border-[var(--accent-primary)] hover:shadow-[0_0_16px_rgba(139,92,246,0.35)] transition-all"
             >
-              <Shield className="w-4 h-4 text-[var(--accent-soft)]" />
+              <VaultLogo className="w-5 h-5" />
             </button>
             <button
               type="button"
@@ -972,7 +972,7 @@ export function App() {
               <div className="flex items-center justify-between px-2">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-8 h-8 rounded-xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shrink-0">
-                    <Shield className="w-4 h-4 text-[var(--accent-soft)]" />
+                    <VaultLogo className="w-5 h-5" />
                   </div>
                   <span className="font-bold tracking-tight text-sm truncate">Pass-Vault</span>
                 </div>
@@ -1130,7 +1130,7 @@ export function App() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center">
-                <Shield className="w-4 h-4 text-[var(--accent-soft)]" />
+                <VaultLogo className="w-4 h-4" />
               </div>
               <span className="font-bold text-sm tracking-tight">
                 {activeTab === 'pins'

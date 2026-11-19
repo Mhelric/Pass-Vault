@@ -10,14 +10,13 @@ import {
   type LoginItem,
 } from '@vault/core';
 import { generatePassword, generatePin } from '@vault/crypto';
-import { CategoryBadge, CopyButton, PinKeypad, SecretInput } from '@vault/ui';
+import { CategoryBadge, CopyButton, PinKeypad, SecretInput, VaultLogo } from '@vault/ui';
 import {
   ArrowDownToLine,
   Globe,
   Lock,
   RefreshCw,
   Search,
-  Shield,
   Wand2,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
@@ -174,7 +173,7 @@ export function PopupApp() {
       <div className="h-full w-full bg-[var(--bg-primary)] p-4 flex flex-col justify-between overflow-y-auto gap-3">
         <div className="text-center mt-1 space-y-1.5">
           <div className="w-10 h-10 mx-auto rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center">
-            <Shield className="w-5 h-5 text-[var(--accent-soft)]" />
+            <VaultLogo className="w-6 h-6" />
           </div>
           <h1 className="text-sm font-bold text-[var(--text-primary)]">Pass-Vault</h1>
           <p className="text-[11px] text-[var(--text-muted)]">
@@ -257,7 +256,7 @@ export function PopupApp() {
       {/* Compact Header */}
       <header className="px-3.5 py-2.5 bg-[var(--bg-elevated)] border-b border-[var(--border-subtle)] flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <Shield className="w-4 h-4 text-[var(--accent-soft)] shrink-0" />
+          <VaultLogo className="w-4 h-4 shrink-0" />
           <span className="text-xs font-bold truncate">Pass-Vault</span>
         </div>
 

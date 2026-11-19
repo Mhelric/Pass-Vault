@@ -1,7 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import { MAX_PIN_ATTEMPTS } from '@vault/core';
-import { PinKeypad, SecretInput } from '@vault/ui';
-import { KeyRound, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { PinKeypad, SecretInput, VaultLogo } from '@vault/ui';
+import { KeyRound, ShieldAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { DEMO_BIO_SECRET_STORAGE_KEY } from '../demoSeed.js';
 import { authenticateNativeBiometric } from '../nativeBiometric.js';
@@ -135,7 +135,7 @@ export function LockOverlay({ aliasLabel, bgGifIndex }: LockOverlayProps) {
           {lockState === 'master_password_required' ? (
             <ShieldAlert className="w-8 h-8 text-amber-300" />
           ) : (
-            <ShieldCheck className="w-8 h-8 text-[var(--accent-soft)]" />
+            <VaultLogo className="w-9 h-9" />
           )}
         </div>
 

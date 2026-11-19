@@ -1,19 +1,62 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#1A1A24"/>
-      <stop offset="100%" stop-color="#09090B"/>
+    <!-- Squircle dark obsidian-slate gradient -->
+    <linearGradient id="squircle-bg" x1="256" y1="16" x2="256" y2="496" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#181C28"/>
+      <stop offset="55%" stop-color="#11141E"/>
+      <stop offset="100%" stop-color="#0B0D14"/>
     </linearGradient>
-    <linearGradient id="violet" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#C084FC"/>
+
+    <!-- Subtle inner top border sheen on squircle -->
+    <linearGradient id="squircle-rim" x1="256" y1="16" x2="256" y2="496" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.14"/>
+      <stop offset="35%" stop-color="#A855F7" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.4"/>
+    </linearGradient>
+
+    <!-- Ambient purple glow behind the emblem -->
+    <radialGradient id="ambient-purple" cx="50%" cy="50%" r="48%">
+      <stop offset="0%" stop-color="#A855F7" stop-opacity="0.32"/>
+      <stop offset="55%" stop-color="#7C3AED" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#7C3AED" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Neon violet-magenta to electric purple stroke gradient -->
+    <linearGradient id="neon-violet" x1="256" y1="104" x2="256" y2="404" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#F0ABFC"/>
+      <stop offset="38%" stop-color="#D946EF"/>
+      <stop offset="72%" stop-color="#A855F7"/>
       <stop offset="100%" stop-color="#7C3AED"/>
     </linearGradient>
+
+    <!-- Soft neon bloom filter -->
+    <filter id="neon-glow" x="-28%" y="-28%" width="156%" height="156%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="blur-wide"/>
+      <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur-tight"/>
+      <feMerge>
+        <feMergeNode in="blur-wide"/>
+        <feMergeNode in="blur-tight"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <path d="M256 76L116 138v112c0 98 60 184 140 214 80-30 140-116 140-214V138L256 76z"
-        fill="none" stroke="url(#violet)" stroke-width="26" stroke-linejoin="round"/>
-  <rect x="204" y="232" width="104" height="84" rx="18" fill="url(#violet)"/>
-  <path d="M222 232v-26c0-19 15-34 34-34s34 15 34 34v26"
-        fill="none" stroke="url(#violet)" stroke-width="22" stroke-linecap="round"/>
-  <circle cx="256" cy="274" r="11" fill="#09090B"/>
+
+  <!-- Rounded squircle container -->
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#squircle-bg)" stroke="url(#squircle-rim)" stroke-width="3"/>
+
+  <!-- Soft ambient purple aura -->
+  <circle cx="256" cy="264" r="200" fill="url(#ambient-purple)"/>
+
+  <!-- Glowing padlock-shield + keyhole emblem -->
+  <g filter="url(#neon-glow)" stroke="url(#neon-violet)" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Padlock shackle (left leg meets shield slope; right leg leaves signature open gap) -->
+    <path d="M 198 197 V 164 C 198 130, 224 106, 256 106 C 288 106, 314 130, 314 164 V 168" stroke-width="18"/>
+
+    <!-- Shield body -->
+    <path d="M 256 174 C 228 194, 194 206, 160 210 C 160 302, 192 366, 256 400 C 320 366, 352 302, 352 210 C 318 206, 284 194, 256 174 Z" stroke-width="18"/>
+
+    <!-- Keyhole ring & vertical slot -->
+    <circle cx="256" cy="272" r="19" stroke-width="15"/>
+    <path d="M 256 292 V 326" stroke-width="15"/>
+  </g>
 </svg>
