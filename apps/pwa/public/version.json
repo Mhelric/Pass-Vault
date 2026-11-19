@@ -1,5 +1,5 @@
 {
-  "version": "1.0.19",
-  "apkUrl": "https://pass-vault-mhel.vercel.app/Pass-Vault.apk",
-  "notes": "Added animated cyber background and translucent glassmorphism to the PIN code page."
+  "version": "1.0.20",
+  "apkUrl": "https://github.com/Mhelric/password-manager/releases/download/android-latest/Pass-Vault.apk",
+  "notes": "New neon padlock-shield logo across app, Android, extension & web, plus direct APK update download."
 }

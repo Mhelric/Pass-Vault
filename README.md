@@ -10,7 +10,7 @@ Built with a Deep Obsidian (`#09090B`) & Electric Purple (`#8B5CF6`) design syst
 
 <p>
   <a href="https://pass-vault-mhel.vercel.app/Pass-Vault.apk">
-    <img src="https://img.shields.io/badge/Download_Android_APK-v1.0.19-8B5CF6?style=for-the-badge&logo=android&logoColor=white" alt="Download Android APK" />
+    <img src="https://img.shields.io/badge/Download_Android_APK-v1.0.20-8B5CF6?style=for-the-badge&logo=android&logoColor=white" alt="Download Android APK" />
   </a>
   <a href="https://pass-vault-mhel.vercel.app">
     <img src="https://img.shields.io/badge/Open_Web_App-pass--vault--mhel.vercel.app-18181B?style=for-the-badge&logo=vercel&logoColor=C084FC" alt="Open Web App" />
@@ -104,13 +104,14 @@ npm run build
 
 ## 📋 Release Notes
 
-### 🟣 Latest — `v1.0.19`
-- Added the 8-GIF cycling Destockd archival cyber and vault background from Sign In to the **PIN code lock screen** (`LockOverlay`).
-- Styled the PIN keypad with frosted glassmorphism (`bg-[#12121a]/60`, `backdrop-blur-md`, subtle `border-white/15`, and top highlights) so the background glows through as digits are entered.
-- Enhanced Master Password fallback form with matching glassmorphism (`bg-[#12121a]/55`, `backdrop-blur-xl`, `border-white/15`).
+### 🟣 Latest — `v1.0.20`
+- Replaced all app, browser tab, Android launcher, extension, and Open Graph logos with the new glowing neon padlock-shield SVG emblem (`<VaultLogo />`).
+- Pointed `version.json` `apkUrl` directly to the signed `android-latest` GitHub Release APK so in-app **Download Update** always fetches the newest build reliably.
 
 <details>
-<summary><strong>Previous Releases (v1.0.1 – v1.0.18)</strong></summary>
+<summary><strong>Previous Releases (v1.0.1 – v1.0.19)</strong></summary>
+
+#### `v1.0.19`
 
 #### `v1.0.18`
 - Styled the Sign In card with translucent dark glassmorphism (`bg-[#12121a]/55`, `backdrop-blur-xl`, subtle top highlight) so the animated background GIFs glow softly through.
