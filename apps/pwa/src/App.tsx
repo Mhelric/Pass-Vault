@@ -795,7 +795,7 @@ export function App() {
           {/* Sign In or Create Encrypted Vault */}
           <form
             onSubmit={(e) => void handleAuthSubmit(e)}
-            className="relative overflow-hidden rounded-2xl bg-[var(--bg-elevated)]/90 backdrop-blur-md border border-[var(--border-subtle)] p-5 shadow-2xl"
+            className="relative overflow-hidden rounded-2xl bg-[#12121a]/55 backdrop-blur-xl border border-white/15 p-5 shadow-[0_16px_48px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)]"
           >
             {authBusy && (
               <div className="vault-fade-in absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-2xl bg-[var(--bg-elevated)]/90 backdrop-blur-sm px-6 text-center">
