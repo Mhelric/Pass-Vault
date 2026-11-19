@@ -119,8 +119,8 @@ export function App() {
   useEffect(() => {
     if (lockState !== 'unauthenticated' && userId) return;
     const id = window.setInterval(() => {
-      setBgGifIndex((prev) => (prev + 1) % 4);
-    }, 5000);
+      setBgGifIndex((prev) => (prev + 1) % 8);
+    }, 3000);
     return () => window.clearInterval(id);
   }, [lockState, userId]);
 
@@ -757,6 +757,10 @@ export function App() {
       '/signin-bg-2.gif',
       '/signin-bg-3.gif',
       '/signin-bg-4.gif',
+      '/signin-bg-5.gif',
+      '/signin-bg-6.gif',
+      '/signin-bg-7.gif',
+      '/signin-bg-8.gif',
     ];
     return (
       <div className="relative min-h-dvh w-full overflow-hidden bg-[var(--bg-primary)] flex items-center justify-center px-4 py-10">
@@ -766,7 +770,7 @@ export function App() {
             src={src}
             alt=""
             aria-hidden="true"
-            className={`pointer-events-none fixed inset-0 h-full w-full object-cover scale-105 transition-opacity duration-1000 ${
+            className={`pointer-events-none fixed inset-0 h-full w-full object-cover scale-105 transition-opacity duration-700 ${
               idx === bgGifIndex ? 'opacity-75' : 'opacity-0'
             }`}
           />

@@ -10,7 +10,7 @@ Built with a Deep Obsidian (`#09090B`) & Electric Purple (`#8B5CF6`) design syst
 
 <p>
   <a href="https://pass-vault-mhel.vercel.app/Pass-Vault.apk">
-    <img src="https://img.shields.io/badge/Download_Android_APK-v1.0.16-8B5CF6?style=for-the-badge&logo=android&logoColor=white" alt="Download Android APK" />
+    <img src="https://img.shields.io/badge/Download_Android_APK-v1.0.17-8B5CF6?style=for-the-badge&logo=android&logoColor=white" alt="Download Android APK" />
   </a>
   <a href="https://pass-vault-mhel.vercel.app">
     <img src="https://img.shields.io/badge/Open_Web_App-pass--vault--mhel.vercel.app-18181B?style=for-the-badge&logo=vercel&logoColor=C084FC" alt="Open Web App" />
@@ -104,11 +104,14 @@ npm run build
 
 ## 📋 Release Notes
 
-### 🟣 Latest — `v1.0.16`
-- Added 3 more Destockd vault/cyber background GIFs (`signin-bg-2.gif`, `signin-bg-3.gif`, `signin-bg-4.gif`) with a smooth 5-second crossfade rotation on the Sign In page.
+### 🟣 Latest — `v1.0.17`
+- Expanded Sign In background to **8** Destockd security, vault, and cyber GIFs (`signin-bg.gif` through `signin-bg-8.gif`), synced to a 3-second single-play crossfade cycle so each GIF plays once before advancing.
 
 <details>
-<summary><strong>Previous Releases (v1.0.1 – v1.0.15)</strong></summary>
+<summary><strong>Previous Releases (v1.0.1 – v1.0.16)</strong></summary>
+
+#### `v1.0.16`
+- Added 3 more Destockd vault/cyber background GIFs (`signin-bg-2.gif`, `signin-bg-3.gif`, `signin-bg-4.gif`) with a smooth 5-second crossfade rotation on the Sign In page.
 
 #### `v1.0.15`
 - Cropped, brightened, and full-bleed scaled the Sign In background GIF (`signin-bg.gif`) so it fills the entire viewport clearly.
