@@ -39,6 +39,7 @@ import { ItemFormModal } from './components/ItemFormModal.js';
 import { ItemInspector } from './components/ItemInspector.js';
 import { LockOverlay } from './components/LockOverlay.js';
 import { SettingsView } from './components/SettingsView.js';
+import { VaultBackground } from './components/VaultBackground.js';
 import {
   getItemSubtitle,
   getPrimarySecret,
@@ -117,12 +118,12 @@ export function App() {
   const [bgGifIndex, setBgGifIndex] = useState(0);
 
   useEffect(() => {
-    if (lockState !== 'unauthenticated' && userId) return;
+    if (lockState === 'unlocked') return;
     const id = window.setInterval(() => {
       setBgGifIndex((prev) => (prev + 1) % 8);
     }, 3000);
     return () => window.clearInterval(id);
-  }, [lockState, userId]);
+  }, [lockState]);
 
   useEffect(() => {
     if (isBooting) return;
@@ -752,33 +753,9 @@ export function App() {
 
   // 1. Auth / Onboarding Gate
   if (lockState === 'unauthenticated' || !userId) {
-    const signInGifs = [
-      '/signin-bg.gif',
-      '/signin-bg-2.gif',
-      '/signin-bg-3.gif',
-      '/signin-bg-4.gif',
-      '/signin-bg-5.gif',
-      '/signin-bg-6.gif',
-      '/signin-bg-7.gif',
-      '/signin-bg-8.gif',
-    ];
     return (
       <div className="relative min-h-dvh w-full overflow-hidden bg-[var(--bg-primary)] flex items-center justify-center px-4 py-10">
-        {signInGifs.map((src, idx) => (
-          <img
-            key={src}
-            src={src}
-            alt=""
-            aria-hidden="true"
-            className={`pointer-events-none fixed inset-0 h-full w-full object-cover scale-105 transition-opacity duration-700 ${
-              idx === bgGifIndex ? 'opacity-75' : 'opacity-0'
-            }`}
-          />
-        ))}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-0 bg-gradient-to-b from-[#09090b]/45 via-[#120d1f]/35 to-[#09090b]/60"
-        />
+        <VaultBackground activeIndex={bgGifIndex} />
         <div className="vault-fade-in relative z-10 w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
             <div className="w-16 h-16 mx-auto rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shadow-[0_0_36px_rgba(139,92,246,0.3)] backdrop-blur-sm">
@@ -938,7 +915,11 @@ export function App() {
   if (lockState !== 'unlocked') {
     return (
       <>
-        <LockOverlay aliasLabel={prefs.aliasLabel} isDemoMode={prefs.isDemoMode} />
+        <LockOverlay
+          aliasLabel={prefs.aliasLabel}
+          isDemoMode={prefs.isDemoMode}
+          bgGifIndex={bgGifIndex}
+        />
         {updateAvailableModal}
         {exitConfirmModal}
       </>

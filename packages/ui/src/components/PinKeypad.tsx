@@ -87,7 +87,7 @@ export function PinKeypad({
                   ? 'bg-[var(--accent-soft)] scale-110 shadow-[0_0_12px_rgba(168,85,247,0.65)]'
                   : error
                     ? 'border border-[var(--status-danger)] bg-transparent'
-                    : 'border border-[var(--border-subtle)] bg-[var(--bg-surface)]'
+                    : 'border border-white/20 bg-white/10 backdrop-blur-sm'
               }`}
             />
           );
@@ -113,7 +113,7 @@ export function PinKeypad({
             type="button"
             disabled={isSubmitting}
             onClick={() => handleDigit(digit)}
-            className="h-16 w-16 mx-auto rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xl font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-surface)] hover:border-[var(--accent-primary)] active:scale-95 active:bg-[var(--accent-tint)] transition-all disabled:opacity-50"
+            className="h-16 w-16 mx-auto rounded-full bg-[#12121a]/60 backdrop-blur-md border border-white/15 text-xl font-semibold text-[var(--text-primary)] shadow-[0_4px_16px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-[var(--accent-tint)] hover:border-[var(--accent-primary)]/50 active:scale-95 active:bg-[var(--accent-tint)] transition-all disabled:opacity-50"
           >
             {digit}
           </button>
@@ -127,7 +127,7 @@ export function PinKeypad({
           type="button"
           disabled={isSubmitting}
           onClick={() => handleDigit('0')}
-          className="h-16 w-16 mx-auto rounded-full bg-[var(--bg-elevated)] border border-[var(--border-subtle)] text-xl font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-surface)] hover:border-[var(--accent-primary)] active:scale-95 active:bg-[var(--accent-tint)] transition-all disabled:opacity-50"
+          className="h-16 w-16 mx-auto rounded-full bg-[#12121a]/60 backdrop-blur-md border border-white/15 text-xl font-semibold text-[var(--text-primary)] shadow-[0_4px_16px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.08)] hover:bg-[var(--accent-tint)] hover:border-[var(--accent-primary)]/50 active:scale-95 active:bg-[var(--accent-tint)] transition-all disabled:opacity-50"
         >
           0
         </button>
@@ -138,7 +138,7 @@ export function PinKeypad({
           disabled={isSubmitting || digits.length === 0}
           onClick={handleBackspace}
           aria-label="Delete last digit"
-          className="h-16 w-16 mx-auto rounded-full text-[var(--text-muted)] flex items-center justify-center hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] active:scale-95 transition-all disabled:opacity-30"
+          className="h-16 w-16 mx-auto rounded-full text-[var(--text-muted)] flex items-center justify-center hover:text-[var(--text-primary)] hover:bg-white/10 active:scale-95 transition-all disabled:opacity-30"
         >
           <Delete className="w-6 h-6" />
         </button>
@@ -152,7 +152,7 @@ export function PinKeypad({
           onClick={() => void onBiometric()}
           aria-label="Unlock with FaceID or Fingerprint"
           title="Unlock with Biometrics"
-          className="mt-5 h-14 w-14 rounded-full bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 text-[var(--accent-soft)] flex items-center justify-center hover:bg-[var(--accent-primary)]/25 active:scale-95 transition-all disabled:opacity-50"
+          className="mt-5 h-14 w-14 rounded-full bg-[var(--accent-tint)]/80 backdrop-blur-md border border-[var(--accent-primary)]/40 text-[var(--accent-soft)] flex items-center justify-center shadow-[0_0_24px_rgba(139,92,246,0.3)] hover:bg-[var(--accent-primary)]/30 active:scale-95 transition-all disabled:opacity-50"
         >
           <Fingerprint className="w-6 h-6" />
         </button>

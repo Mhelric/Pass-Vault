@@ -2,17 +2,19 @@ import { Capacitor } from '@capacitor/core';
 import { MAX_PIN_ATTEMPTS } from '@vault/core';
 import { PinKeypad, SecretInput } from '@vault/ui';
 import { KeyRound, ShieldAlert, ShieldCheck } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DEMO_BIO_SECRET_STORAGE_KEY } from '../demoSeed.js';
 import { authenticateNativeBiometric } from '../nativeBiometric.js';
 import { saveUiPreferences, useVault } from '../vaultRuntime.js';
+import { VaultBackground } from './VaultBackground.js';
 
 export interface LockOverlayProps {
   aliasLabel: string | null;
   isDemoMode: boolean;
+  bgGifIndex?: number;
 }
 
-export function LockOverlay({ aliasLabel }: LockOverlayProps) {
+export function LockOverlay({ aliasLabel, bgGifIndex }: LockOverlayProps) {
   const userId = useVault((s) => s.userId);
   const lockState = useVault((s) => s.lockState);
   const failedPinAttempts = useVault((s) => s.failedPinAttempts);
@@ -30,6 +32,17 @@ export function LockOverlay({ aliasLabel }: LockOverlayProps) {
   const [masterPassword, setMasterPassword] = useState('');
   const [isBusy, setIsBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [localBgIndex, setLocalBgIndex] = useState(0);
+
+  useEffect(() => {
+    if (bgGifIndex !== undefined) return;
+    const id = window.setInterval(() => {
+      setLocalBgIndex((prev) => (prev + 1) % 8);
+    }, 3000);
+    return () => window.clearInterval(id);
+  }, [bgGifIndex]);
+
+  const activeBgIndex = bgGifIndex ?? localBgIndex;
 
   const showMasterForm =
     useMasterFallback || lockState === 'master_password_required' || !hasPinConfigured;
@@ -106,14 +119,16 @@ export function LockOverlay({ aliasLabel }: LockOverlayProps) {
 
   return (
     <div
-      className={`vault-fade-in fixed inset-0 z-50 flex flex-col bg-[var(--bg-primary)] px-6 overflow-y-auto ${
+      className={`vault-fade-in fixed inset-0 z-50 flex flex-col bg-[var(--bg-primary)] px-6 overflow-y-auto overflow-x-hidden ${
         showMasterForm ? 'justify-center py-8' : 'justify-between pt-14 pb-6'
       }`}
     >
+      <VaultBackground activeIndex={activeBgIndex} />
+
       {/* Vault Status Emblem */}
-      <div className={`flex flex-col items-center text-center ${showMasterForm ? 'mb-6' : 'mt-2 mb-4'}`}>
+      <div className={`relative z-10 flex flex-col items-center text-center ${showMasterForm ? 'mb-6' : 'mt-2 mb-4'}`}>
         <div
-          className={`w-16 h-16 rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shadow-[0_0_32px_rgba(139,92,246,0.28)] mb-4 transition-all ${
+          className={`w-16 h-16 rounded-2xl bg-[var(--accent-tint)] border border-[var(--accent-primary)]/40 flex items-center justify-center shadow-[0_0_36px_rgba(139,92,246,0.3)] backdrop-blur-sm mb-4 transition-all ${
             isBusy ? 'vault-shield-pulse' : ''
           }`}
         >
@@ -143,7 +158,7 @@ export function LockOverlay({ aliasLabel }: LockOverlayProps) {
       {/* Thumb-zone PIN Pad or Master Password Gate */}
       <div
         key={showMasterForm ? 'master' : 'pin'}
-        className={`vault-scale-in w-full max-w-sm mx-auto ${showMasterForm ? 'mb-4' : 'mb-2'}`}
+        className={`vault-scale-in relative z-10 w-full max-w-sm mx-auto ${showMasterForm ? 'mb-4' : 'mb-2'}`}
       >
         {!showMasterForm ? (
           <div className="space-y-4">
@@ -177,7 +192,7 @@ export function LockOverlay({ aliasLabel }: LockOverlayProps) {
         ) : (
           <form
             onSubmit={(e) => void handleMasterSubmit(e)}
-            className="rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-subtle)] p-5 space-y-4"
+            className="rounded-2xl bg-[#12121a]/55 backdrop-blur-xl border border-white/15 p-5 shadow-[0_16px_48px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.08)] space-y-4"
           >
             <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-primary)]">
               <KeyRound className="w-4 h-4 text-[var(--accent-soft)]" />
@@ -219,7 +234,7 @@ export function LockOverlay({ aliasLabel }: LockOverlayProps) {
         )}
       </div>
 
-      <div className="text-center">
+      <div className="relative z-10 text-center">
         <button
           type="button"
           onClick={() => {
