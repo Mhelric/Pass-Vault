@@ -114,6 +114,15 @@ export function App() {
     (Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }> }) | null
   >(null);
   const [availableUpdate, setAvailableUpdate] = useState<RemoteVersionManifest | null>(null);
+  const [bgGifIndex, setBgGifIndex] = useState(0);
+
+  useEffect(() => {
+    if (lockState !== 'unauthenticated' && userId) return;
+    const id = window.setInterval(() => {
+      setBgGifIndex((prev) => (prev + 1) % 4);
+    }, 5000);
+    return () => window.clearInterval(id);
+  }, [lockState, userId]);
 
   useEffect(() => {
     if (isBooting) return;
@@ -743,14 +752,25 @@ export function App() {
 
   // 1. Auth / Onboarding Gate
   if (lockState === 'unauthenticated' || !userId) {
+    const signInGifs = [
+      '/signin-bg.gif',
+      '/signin-bg-2.gif',
+      '/signin-bg-3.gif',
+      '/signin-bg-4.gif',
+    ];
     return (
       <div className="relative min-h-dvh w-full overflow-hidden bg-[var(--bg-primary)] flex items-center justify-center px-4 py-10">
-        <img
-          src="/signin-bg.gif"
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none fixed inset-0 h-full w-full object-cover scale-105 opacity-75"
-        />
+        {signInGifs.map((src, idx) => (
+          <img
+            key={src}
+            src={src}
+            alt=""
+            aria-hidden="true"
+            className={`pointer-events-none fixed inset-0 h-full w-full object-cover scale-105 transition-opacity duration-1000 ${
+              idx === bgGifIndex ? 'opacity-75' : 'opacity-0'
+            }`}
+          />
+        ))}
         <div
           aria-hidden="true"
           className="pointer-events-none fixed inset-0 bg-gradient-to-b from-[#09090b]/45 via-[#120d1f]/35 to-[#09090b]/60"

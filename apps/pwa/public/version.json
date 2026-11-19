@@ -1,5 +1,5 @@
 {
-  "version": "1.0.15",
+  "version": "1.0.16",
   "apkUrl": "https://pass-vault-mhel.vercel.app/Pass-Vault.apk",
-  "notes": "Cropped, brightened, and full-bleed scaled Sign In background GIF."
+  "notes": "Crossfading multi-GIF security/vault background on the Sign In page."
 }
